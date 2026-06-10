@@ -198,16 +198,17 @@ body { background: var(--epi-surface); color: var(--epi-text); }
 .epi-filter-toggle:focus { background: var(--epi-navy-dark); color: #fff; }
 
 /* ── Facet groups — clean card style ───────────────────────── */
-.epi-facet-group {
+/* Use full selector chain to beat .module.module-narrow.module-shallow (0,3,0) */
+section.module.module-narrow.module-shallow.epi-facet-group {
+  background: transparent !important;
   border: none !important;
   border-radius: 0 !important;
-  background: transparent;
-  padding: 1rem 1rem 0;
   box-shadow: none !important;
+  margin: 0 !important;
+  padding: 1rem 1rem 0;
   overflow: visible !important;
 }
-.epi-facet-group + .epi-facet-group {
-  margin-top: 0;
+section.epi-facet-group + section.epi-facet-group {
   border-top: 1px solid var(--epi-border) !important;
 }
 .epi-facet-group .module-content { border: none !important; border-radius: 0 !important; padding: 0 0 0.75rem !important; background: none !important; box-shadow: none !important; }
