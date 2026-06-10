@@ -156,7 +156,16 @@ body { background: var(--epi-surface); color: var(--epi-text); }
 .filter-list .pill .remove:hover { opacity: 1; }
 
 /* ── Sidebar facets ────────────────────────────────────────── */
-.filters > div { display: flex; flex-direction: column; gap: 0.75rem; }
+/* Reset core CKAN .filters > div which adds background + overflow:hidden */
+.filters > div,
+#facet-sidebar > div {
+  background: none !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
 .module.module-narrow.module-shallow {
   background: var(--epi-white);
   border: 1px solid var(--epi-border);
