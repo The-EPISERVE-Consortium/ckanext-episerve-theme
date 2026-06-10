@@ -188,22 +188,50 @@ body { background: var(--epi-surface); color: var(--epi-text); }
 .epi-filter-toggle:hover,
 .epi-filter-toggle:focus { background: var(--epi-navy-dark); color: #fff; }
 
-/* ── Collapsible facet groups ───────────────────────────────── */
-.epi-facet-group + .epi-facet-group { margin-top: 0.5rem; }
-.epi-facet-group { border-radius: 0 !important; }
-.epi-facet-heading {
-  cursor: pointer;
-  user-select: none;
-  justify-content: space-between;
+/* ── Facet groups — clean card style ───────────────────────── */
+.epi-facet-group {
+  border-radius: 0.5rem !important;
+  border: 1px solid var(--epi-border) !important;
+  background: #fff;
+  padding: 1rem 1rem 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  overflow: visible !important;
 }
-.epi-facet-heading:hover { background: var(--epi-navy-dark); }
-.epi-facet-chevron {
-  transition: transform 0.2s ease;
-  font-size: 0.75rem;
-  margin-left: auto;
+.epi-facet-group + .epi-facet-group { margin-top: 0.75rem; }
+
+/* No navy heading — plain bold title */
+.epi-facet-group .module-heading { display: none; }
+.epi-facet-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--epi-navy);
+  margin: 0 0 0.6rem;
+  padding: 0;
 }
-.epi-facet-heading[aria-expanded="false"] .epi-facet-chevron {
-  transform: rotate(-90deg);
+
+/* Checkbox-style facet items */
+.nav-facet .nav-item a {
+  padding: 0.25rem 0;
+  font-size: 0.825rem;
+  color: var(--epi-cyan);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+.nav-facet .nav-item a:hover { color: var(--epi-navy); background: none; }
+.nav-facet .nav-item.active a { color: var(--epi-navy); font-weight: 600; }
+.epi-facet-cb {
+  pointer-events: none;
+  flex-shrink: 0;
+  width: 0.9rem;
+  height: 0.9rem;
+  accent-color: var(--epi-cyan);
+}
+.epi-facet-group .module-footer {
+  border-top: 1px solid var(--epi-border);
+  margin: 0 -1rem;
+  padding: 0.4rem 1rem;
 }
 .nav-facet { padding: 0.25rem 0; }
 .nav-facet .nav-item a { padding: 0.3rem 1rem; font-size: 0.825rem; color: var(--epi-text); display: flex; justify-content: space-between; align-items: center; text-decoration: none; }
