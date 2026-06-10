@@ -1,15 +1,12 @@
 {% extends "package/read_base.html" %}
 
-{# Remove sidebar entirely — triggers no-nav on the row wrapper #}
+{# Remove sidebar so row gets no-nav / full-width treatment #}
 {% block secondary %}{% endblock %}
 {% block secondary_content %}{% endblock %}
 
-{# Expand primary to full width #}
 {% block primary %}
-<div class="primary col-12" role="main">{{ self.primary_content() }}</div>
-{% endblock %}
+<div class="primary col-12" role="main">
 
-{% block primary_content %}
   {% if h.check_access('package_update', {'id': pkg.id }) %}
   <div class="mb-2 text-end">
     {% link_for _('Manage'), named_route=pkg.type ~ '.edit', id=pkg.name, class_='btn btn-sm btn-default', icon='wrench' %}
@@ -31,22 +28,16 @@
     {% endif %}
   </div>
 
-  {# Lower card: Resources tab + Additional Info tab #}
+  {# Lower card: tabbed resources + additional info #}
   <div class="epi-ds-body">
     <ul class="nav epi-ds-tabs" role="tablist">
       <li class="nav-item" role="presentation">
-        <button class="epi-ds-tab active" id="tab-resources-btn"
-                data-bs-toggle="tab" data-bs-target="#tab-resources"
-                type="button" role="tab" aria-selected="true">
-          {{ _('Resources') }}
-        </button>
+        <button class="epi-ds-tab active" data-bs-toggle="tab" data-bs-target="#tab-resources"
+                type="button" role="tab" aria-selected="true">{{ _('Resources') }}</button>
       </li>
       <li class="nav-item" role="presentation">
-        <button class="epi-ds-tab" id="tab-info-btn"
-                data-bs-toggle="tab" data-bs-target="#tab-info"
-                type="button" role="tab" aria-selected="false">
-          {{ _('Additional Info') }}
-        </button>
+        <button class="epi-ds-tab" data-bs-toggle="tab" data-bs-target="#tab-info"
+                type="button" role="tab" aria-selected="false">{{ _('Additional Info') }}</button>
       </li>
     </ul>
     <div class="tab-content epi-ds-tab-content">
@@ -61,4 +52,5 @@
     </div>
   </div>
 
+</div>
 {% endblock %}
