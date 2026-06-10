@@ -407,27 +407,55 @@ a.tag:hover { background: #e0f2fe; border-color: var(--epi-cyan); color: var(--e
 
 /* ── Footer ────────────────────────────────────────────────── */
 .site-footer {
-  background: var(--epi-navy);
-  color: rgba(255,255,255,0.65);
-  padding: 2rem 0 1rem;
+  background: #0a0a0a;
+  color: rgba(255,255,255,0.55);
+  padding: 3rem 0 2rem;
   margin-top: 3rem;
-  border-top: 3px solid var(--epi-cyan);
+  border-top: none;
   font-size: 0.85rem;
 }
-.site-footer a { color: rgba(255,255,255,0.65); text-decoration: none; }
+.site-footer a { color: rgba(255,255,255,0.55); text-decoration: none; }
 .site-footer a:hover { color: #fff; }
-.site-footer ul { list-style: none; padding: 0; margin: 0; }
-.site-footer li { margin-bottom: 0.35rem; }
-.footer-title { color: #fff; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.6rem; }
-.footer-divider {
-  border-top: 1px solid rgba(255,255,255,0.1);
-  margin-top: 1.5rem;
-  padding-top: 0.875rem;
-  font-size: 0.775rem;
-  color: rgba(255,255,255,0.35);
+.epi-footer-main { align-items: flex-start; }
+.epi-footer-brand { padding-right: 3rem; }
+.epi-footer-logo {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.4rem;
 }
-.footer-divider a { color: rgba(255,255,255,0.35); }
-.footer-divider a:hover { color: rgba(255,255,255,0.7); }
+.epi-footer-tagline {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 1rem;
+}
+.epi-footer-desc {
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.65;
+  max-width: 480px;
+  margin-bottom: 1.5rem;
+}
+.epi-footer-copy {
+  font-size: 0.775rem;
+  color: rgba(255,255,255,0.3);
+  margin: 0;
+}
+.epi-footer-section-title {
+  color: rgba(255,255,255,0.85);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.75rem;
+}
+.epi-footer-links { list-style: none; padding: 0; margin: 0; }
+.epi-footer-links li { margin-bottom: 0.5rem; }
+.epi-footer-links a { color: rgba(255,255,255,0.55); font-size: 0.875rem; }
+.epi-footer-links a:hover { color: #fff; }
 
 /* ── Landing page hero ────────────────────────────────────────────── */
 .epi-homepage {
