@@ -40,7 +40,7 @@
           <div class="epi-chart-card">
             <p class="epi-chart-title">Corona Incidence in Germany</p>
             <div class="epi-chart-wrap">
-              <canvas id="epi-chart-0"></canvas>
+              <div id="epi-chart-0"></div>
             </div>
             <div class="epi-chart-footer">
               <span class="epi-chart-source">Source: RKI &middot; Updated daily</span>
@@ -76,60 +76,57 @@
     </div>
   </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3/dist/apexcharts.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script>
 (function () {
   fetch('/metabase-proxy/84b950d2-0cb1-4eba-a6a7-26230d982bcf')
     .then(function (r) { return r.json(); })
     .then(function (data) {
-      var labels = data.map(function (r) {
-        var d = new Date(r['Meldedatum'] + 'T00:00:00');
-        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      var series = data.map(function (r) {
+        return [new Date(r['Meldedatum'] + 'T00:00:00').getTime(), r['inzidenz_7d']];
       });
-      var values = data.map(function (r) { return r['inzidenz_7d']; });
-      new Chart(document.getElementById('epi-chart-0'), {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            data: values,
-            borderColor: '#f59e0b',
-            backgroundColor: 'rgba(245,158,11,0.15)',
-            borderWidth: 2.5,
-            pointRadius: 0,
-            tension: 0.4,
-            fill: true
-          }]
+      new ApexCharts(document.getElementById('epi-chart-0'), {
+        chart: {
+          type: 'area',
+          height: '100%',
+          toolbar: { show: false },
+          zoom: { enabled: false },
+          animations: { enabled: false },
+          parentHeightOffset: 0,
+          sparkline: { enabled: false }
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: { mode: 'index', intersect: false }
-          },
-          scales: {
-            x: {
-              ticks: { maxTicksLimit: 6, font: { size: 10 }, color: '#64748b' },
-              grid: { display: false }
-            },
-            y: {
-              title: {
-                display: true,
-                text: 'Incidence per 100,000 (7-day)',
-                font: { size: 10 },
-                color: '#64748b'
-              },
-              ticks: {
-                font: { size: 10 },
-                color: '#64748b',
-                callback: function (v) { return v.toLocaleString('en-US'); }
-              },
-              grid: { color: 'rgba(0,0,0,0.05)' }
-            }
+        series: [{ name: 'Incidence per 100k', data: series }],
+        colors: ['#f59e0b'],
+        stroke: { width: 2.5, curve: 'smooth' },
+        fill: {
+          type: 'gradient',
+          gradient: { shadeIntensity: 1, opacityFrom: 0.18, opacityTo: 0.02, stops: [0, 100] }
+        },
+        markers: { size: 0 },
+        dataLabels: { enabled: false },
+        legend: { show: false },
+        xaxis: {
+          type: 'datetime',
+          tickAmount: 6,
+          labels: { style: { fontSize: '10px', colors: '#64748b' }, datetimeUTC: false },
+          axisBorder: { show: false },
+          axisTicks: { show: false }
+        },
+        yaxis: {
+          title: { text: 'Incidence per 100,000 (7-day)', style: { fontSize: '10px', color: '#64748b', fontWeight: 400 } },
+          labels: {
+            style: { fontSize: '10px', colors: '#64748b' },
+            formatter: function (v) { return v.toLocaleString('en-US'); }
           }
-        }
-      });
+        },
+        grid: {
+          xaxis: { lines: { show: false } },
+          yaxis: { lines: { show: true } },
+          borderColor: 'rgba(0,0,0,0.05)'
+        },
+        tooltip: { x: { format: 'MMM d, yyyy' } }
+      }).render();
     })
     .catch(function () {
       var wrap = document.getElementById('epi-chart-0').parentElement;
