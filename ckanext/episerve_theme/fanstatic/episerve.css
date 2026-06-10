@@ -24,7 +24,7 @@
 
 /* ── Page ──────────────────────────────────────────────────── */
 html, body { background-color: #f0ebe0 !important; color: var(--epi-text); }
-.main { padding-top: 1.5rem; padding-bottom: 2rem; }
+.main { padding-top: 1.5rem; padding-bottom: 2rem; background: #f0ebe0 !important; }
 
 /* ── Account masthead (top bar) ────────────────────────────── */
 .account-masthead {
