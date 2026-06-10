@@ -38,14 +38,14 @@ body {
 .account-masthead {
   background: linear-gradient(to bottom, #b8a98a, #f0ebe0);
   border-bottom: none;
-  padding: 0.3rem 0;
-  font-size: 0.8rem;
+  padding: 0.47rem 0;
+  font-size: 1.04rem;
 }
 .account-masthead a,
 .account-masthead .btn-link {
   color: #000 !important;
   text-decoration: none;
-  font-size: 0.8rem;
+  font-size: 1.04rem;
   padding: 0;
   border: none;
   background: none;
