@@ -37,11 +37,12 @@
     <div class="container-fluid px-4">
       <div class="row g-3">
         <div class="col-md-4">
-          <iframe
-            src="https://metabase.episerve.zib.de/public/question/84b950d2-0cb1-4eba-a6a7-26230d982bcf"
-            class="epi-chart-frame"
-            frameborder="0"
-            allowtransparency="true"></iframe>
+          <div class="epi-chart-card">
+            <p class="epi-chart-label">Reported cases — 7-day average</p>
+            <div class="epi-chart-wrap">
+              <canvas id="epi-chart-0"></canvas>
+            </div>
+          </div>
         </div>
         <div class="col-md-4">
           <div class="epi-chart-placeholder">
@@ -57,4 +58,52 @@
     </div>
   </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  fetch('https://metabase.episerve.zib.de/api/public/card/84b950d2-0cb1-4eba-a6a7-26230d982bcf/query/json?')
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      var labels = data.map(function (r) { return r['Meldedatum']; });
+      var values = data.map(function (r) { return r['faelle_7d_avg']; });
+      new Chart(document.getElementById('epi-chart-0'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: values,
+            borderColor: '#0891b2',
+            backgroundColor: 'rgba(8,145,178,0.08)',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { mode: 'index', intersect: false }
+          },
+          scales: {
+            x: {
+              ticks: { maxTicksLimit: 6, font: { size: 10 }, color: '#64748b' },
+              grid: { display: false }
+            },
+            y: {
+              ticks: { font: { size: 10 }, color: '#64748b' },
+              grid: { color: 'rgba(0,0,0,0.05)' }
+            }
+          }
+        }
+      });
+    })
+    .catch(function () {
+      var wrap = document.getElementById('epi-chart-0').parentElement;
+      wrap.innerHTML = '<p style="text-align:center;padding-top:3rem;color:#64748b;font-size:0.85rem;">Chart could not be loaded.</p>';
+    });
+}());
+</script>
 {% endblock %}
