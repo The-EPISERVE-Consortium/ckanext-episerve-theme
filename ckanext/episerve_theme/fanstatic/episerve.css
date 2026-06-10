@@ -55,7 +55,7 @@ body {
 .account-masthead ul { margin: 0; display: flex; gap: 1rem; align-items: center; justify-content: flex-end; list-style: none; padding: 0; }
 .account-masthead li { border: none !important; padding-left: 0 !important; }
 .account-masthead li::before { content: none !important; }
-.account-masthead .account.not-authed a { font-size: 1.35rem; }
+.account-masthead .account.not-authed a { font-size: 1.2rem; }
 
 /* ── Main navbar ───────────────────────────────────────────── */
 .masthead {
