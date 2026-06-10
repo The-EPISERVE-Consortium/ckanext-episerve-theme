@@ -599,7 +599,7 @@ body.epi-home .main { padding-top: 0 !important; padding-bottom: 0 !important; }
 /* Breathing room between the inner white container and the column edges */
 .filters > div,
 #facet-sidebar > div {
-  margin: 0.5rem 0 !important;
+  margin-bottom: 0.5rem !important;
 }
 
 /* Inline date metadata on dataset cards — no box, no uppercase */
