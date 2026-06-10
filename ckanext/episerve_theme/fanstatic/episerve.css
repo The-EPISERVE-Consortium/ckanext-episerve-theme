@@ -35,7 +35,7 @@ html, body { background-color: #f0ebe0 !important; color: var(--epi-text); }
 }
 .account-masthead a,
 .account-masthead .btn-link {
-  color: #3a3020;
+  color: #000 !important;
   text-decoration: none;
   font-size: 0.8rem;
   padding: 0;
@@ -43,7 +43,7 @@ html, body { background-color: #f0ebe0 !important; color: var(--epi-text); }
   background: none;
 }
 .account-masthead a:hover,
-.account-masthead .btn-link:hover { color: #1a2a14; background: none; }
+.account-masthead .btn-link:hover { color: #333 !important; background: none; }
 .account-masthead ul { margin: 0; display: flex; gap: 1rem; align-items: center; justify-content: flex-end; list-style: none; padding: 0; }
 .account-masthead li { border: none !important; padding-left: 0 !important; }
 .account-masthead li::before { content: none !important; }
