@@ -61,7 +61,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script>
 (function () {
-  fetch('https://metabase.episerve.zib.de/api/public/card/84b950d2-0cb1-4eba-a6a7-26230d982bcf/query/json?')
+  fetch('/metabase-proxy/84b950d2-0cb1-4eba-a6a7-26230d982bcf')
     .then(function (r) { return r.json(); })
     .then(function (data) {
       var labels = data.map(function (r) { return r['Meldedatum']; });
