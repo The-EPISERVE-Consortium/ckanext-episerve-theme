@@ -407,55 +407,63 @@ a.tag:hover { background: #e0f2fe; border-color: var(--epi-cyan); color: var(--e
 
 /* ── Footer ────────────────────────────────────────────────── */
 .site-footer {
-  background: #0a0a0a;
-  color: rgba(255,255,255,0.55);
-  padding: 3rem 0 2rem;
+  background: #ede8dd;
+  color: var(--epi-muted);
+  padding: 2.5rem 0 0;
   margin-top: 3rem;
-  border-top: none;
+  border-top: 1px solid #d4cfc5;
   font-size: 0.85rem;
 }
-.site-footer a { color: rgba(255,255,255,0.55); text-decoration: none; }
-.site-footer a:hover { color: #fff; }
-.epi-footer-main { align-items: flex-start; }
-.epi-footer-brand { padding-right: 3rem; }
+.site-footer a { color: var(--epi-navy); text-decoration: none; }
+.site-footer a:hover { color: var(--epi-cyan); }
+.epi-footer-main { align-items: flex-start; padding-bottom: 2rem; }
+.epi-footer-brand { padding-right: 2rem; }
+.epi-footer-brand-row { display: flex; align-items: center; gap: 0.9rem; margin-bottom: 1rem; }
+.epi-footer-shield { width: 2.75rem; height: 3.2rem; flex-shrink: 0; }
 .epi-footer-logo {
-  font-size: 2rem;
+  font-size: 1.4rem;
   font-weight: 800;
-  color: #fff;
-  letter-spacing: 0.08em;
-  margin-bottom: 0.4rem;
+  color: var(--epi-navy);
+  letter-spacing: 0.06em;
+  line-height: 1.1;
 }
 .epi-footer-tagline {
-  font-size: 0.8rem;
-  color: rgba(255,255,255,0.45);
+  font-size: 0.65rem;
+  color: var(--epi-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  margin-bottom: 1rem;
+  margin-top: 0.2rem;
 }
 .epi-footer-desc {
-  font-size: 0.875rem;
-  color: rgba(255,255,255,0.55);
+  font-size: 0.82rem;
+  color: var(--epi-muted);
   line-height: 1.65;
-  max-width: 480px;
-  margin-bottom: 1.5rem;
-}
-.epi-footer-copy {
-  font-size: 0.775rem;
-  color: rgba(255,255,255,0.3);
+  max-width: 400px;
   margin: 0;
 }
+.epi-footer-divider-col {
+  border-left: 1px solid #d4cfc5;
+  min-height: 100px;
+}
 .epi-footer-section-title {
-  color: rgba(255,255,255,0.85);
-  font-weight: 600;
-  font-size: 0.8rem;
+  color: var(--epi-navy);
+  font-weight: 700;
+  font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   margin-bottom: 0.75rem;
 }
 .epi-footer-links { list-style: none; padding: 0; margin: 0; }
 .epi-footer-links li { margin-bottom: 0.5rem; }
-.epi-footer-links a { color: rgba(255,255,255,0.55); font-size: 0.875rem; }
-.epi-footer-links a:hover { color: #fff; }
+.epi-footer-links a { color: var(--epi-muted); font-size: 0.85rem; }
+.epi-footer-links a:hover { color: var(--epi-cyan); }
+.epi-footer-bottom {
+  border-top: 1px solid #d4cfc5;
+  padding: 0.75rem 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--epi-muted);
+}
 
 /* ── Landing page hero ────────────────────────────────────────────── */
 .epi-homepage {

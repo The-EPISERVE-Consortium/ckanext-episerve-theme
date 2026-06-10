@@ -2,28 +2,35 @@
   <div class="container-fluid px-4">
     {% block footer_content %}
     <div class="row epi-footer-main">
-      <div class="col-md-6 epi-footer-brand">
+      <div class="col-md-5 epi-footer-brand">
         {% block footer_about %}
-        <div class="epi-footer-logo">EPISERVE</div>
-        <p class="epi-footer-tagline">Epidemic Simulation &amp; Data Service Platform</p>
-        <p class="epi-footer-desc">Open epidemiological datasets and model outputs for infectious disease research and pandemic preparedness, provided by the EPISERVE Consortium and hosted at Zuse Institute Berlin.</p>
-        <p class="epi-footer-copy">&copy; 2026 EPISERVE Consortium</p>
+        <div class="epi-footer-brand-row">
+          <svg class="epi-footer-shield" viewBox="0 0 48 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24 2L4 10v18c0 12.5 8.5 24.2 20 28 11.5-3.8 20-15.5 20-28V10L24 2z" fill="#1e3a5f" stroke="#0891b2" stroke-width="1.5"/>
+            <line x1="24" y1="18" x2="24" y2="38" stroke="#0891b2" stroke-width="3.5" stroke-linecap="round"/>
+            <line x1="14" y1="28" x2="34" y2="28" stroke="#0891b2" stroke-width="3.5" stroke-linecap="round"/>
+          </svg>
+          <div class="epi-footer-brand-text">
+            <div class="epi-footer-logo">EPISERVE</div>
+            <div class="epi-footer-tagline">Epidemic Simulation &amp; Data Service Platform</div>
+          </div>
+        </div>
+        <p class="epi-footer-desc">Open simulation platform and data service for infectious disease research and pandemic preparedness in Germany. Provided by the EPISERVE Consortium and hosted at Zuse Institute Berlin.</p>
         {% endblock %}
       </div>
-      <div class="col-md-3 offset-md-3">
+      <div class="col-md-1 epi-footer-divider-col d-none d-md-block"></div>
+      <div class="col-md-3 offset-md-1">
         {% block footer_links %}
-        <p class="epi-footer-section-title">{{ _('Links') }}</p>
+        <p class="epi-footer-section-title">{{ _('Legal &amp; API') }}</p>
         <ul class="epi-footer-links">
-          {% set api_url = 'https://docs.ckan.org/en/{0}/api/'.format(g.ckan_doc_version) %}
-          <li><a href="{{ api_url }}">{{ _('CKAN API') }}</a></li>
-          <li><a href="/imprint">{{ _('Imprint') }}</a></li>
-          <li><a href="/privacy-policy">{{ _('Privacy Policy') }}</a></li>
-          <li><a href="/code-of-conduct">{{ _('Code of Conduct') }}</a></li>
-          <li><a href="/terms">{{ _('Terms &amp; Conditions') }}</a></li>
-          <li><a href="/contact">{{ _('Contact') }}</a></li>
+          <li><a href="https://zib.de/impressum">{{ _('Legal Notice and Data Protection') }}</a></li>
+          <li><a href="https://docs.ckan.org/en/latest/api/index.html">{{ _('CKAN API') }}</a></li>
         </ul>
         {% endblock %}
       </div>
+    </div>
+    <div class="epi-footer-bottom">
+      <span>&copy; 2026 EPISERVE Consortium. All rights reserved.</span>
     </div>
     {% endblock %}
   </div>
