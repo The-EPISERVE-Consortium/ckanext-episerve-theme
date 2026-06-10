@@ -5,7 +5,7 @@ import urllib.request
 
 
 def metabase_proxy(card_id):
-    url = f"https://metabase.episerve.zib.de/api/public/card/{card_id}/query/json?"
+    url = f"http://metabase.episerve.zib.de/api/public/card/{card_id}/query/json?"
     try:
         with urllib.request.urlopen(url, timeout=10) as r:
             data = r.read()
