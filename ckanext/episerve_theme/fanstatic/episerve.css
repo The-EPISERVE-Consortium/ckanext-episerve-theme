@@ -494,6 +494,7 @@ body.epi-home .main { padding-top: 0 !important; padding-bottom: 0 !important; }
   border: 1px solid var(--epi-border);
   border-radius: 0.75rem;
   padding: 1.5rem 1.75rem;
+  margin-top: 0.75rem;
   margin-bottom: 1rem;
 }
 
@@ -550,3 +551,7 @@ body.epi-home .main { padding-top: 0 !important; padding-bottom: 0 !important; }
 
 /* Remove the "Data and Resources" heading inside the tab — redundant */
 .epi-ds-tab-content .module-heading { display: none; }
+
+/* Additional Info table — restore cell padding stripped by table-condensed */
+.additional-info table th,
+.additional-info table td { padding: 0.5rem 0.75rem !important; }
