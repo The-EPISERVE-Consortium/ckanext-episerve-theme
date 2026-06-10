@@ -28,14 +28,14 @@ html, body { background-color: #f0ebe0 !important; color: var(--epi-text); }
 
 /* ── Account masthead (top bar) ────────────────────────────── */
 .account-masthead {
-  background: var(--epi-navy-dark);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  background: linear-gradient(to bottom, #b8a98a, #f0ebe0);
+  border-bottom: none;
   padding: 0.3rem 0;
   font-size: 0.8rem;
 }
 .account-masthead a,
 .account-masthead .btn-link {
-  color: rgba(255,255,255,0.65);
+  color: #3a3020;
   text-decoration: none;
   font-size: 0.8rem;
   padding: 0;
@@ -43,7 +43,7 @@ html, body { background-color: #f0ebe0 !important; color: var(--epi-text); }
   background: none;
 }
 .account-masthead a:hover,
-.account-masthead .btn-link:hover { color: #fff; background: none; }
+.account-masthead .btn-link:hover { color: #1a2a14; background: none; }
 .account-masthead ul { margin: 0; display: flex; gap: 1rem; align-items: center; justify-content: flex-end; list-style: none; padding: 0; }
 .account-masthead li { border: none !important; padding-left: 0 !important; }
 .account-masthead li::before { content: none !important; }
