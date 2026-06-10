@@ -48,7 +48,7 @@ hide_resources - If true hides the format badges.
     <div class="dataset-card-meta">
       {% if package.metadata_created %}
         <span class="epi-meta-item">
-          <i class="fa fa-clock-o" aria-hidden="true"></i>
+          <i class="fa fa-calendar" aria-hidden="true"></i>
           {{ _('Created') }} {{ h.render_datetime(package.metadata_created, date_format='%b %d, %Y') }}
         </span>
       {% endif %}
