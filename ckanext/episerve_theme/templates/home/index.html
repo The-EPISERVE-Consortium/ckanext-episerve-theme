@@ -23,6 +23,11 @@
         <button type="submit" class="epi-hero-btn">{{ _('Search') }}</button>
       </div>
     </form>
+    <div class="epi-hero-quicklinks">
+      <a href="{{ h.url_for('dataset.search') }}?q=&groups=type-raw-data" class="epi-hero-ql">{{ _('Datasets') }}</a>
+      <a href="{{ h.url_for('dataset.search') }}?q=&groups=type-model" class="epi-hero-ql">{{ _('Models') }}</a>
+      <a href="{{ h.url_for('dataset.search') }}?q=&groups=type-model-run" class="epi-hero-ql">{{ _('Model Runs') }}</a>
+    </div>
   </div>
   <div class="epi-hero-lower">
     <img src="https://episerve.zib.de/img/hero.png" alt="{{ _('EPISERVE platform visualization') }}" class="epi-hero-img">
