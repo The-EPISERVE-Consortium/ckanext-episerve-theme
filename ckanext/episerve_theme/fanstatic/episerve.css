@@ -7,7 +7,7 @@
   --epi-navy-dark: #16304f;
   --epi-cyan:      #0891b2;
   --epi-cyan-dark: #0772a0;
-  --epi-surface:   #f1f5f9;
+  --epi-surface:   #f0ebe0;
   --epi-border:    #e2e8f0;
   --epi-text:      #0f172a;
   --epi-muted:     #64748b;
@@ -18,7 +18,7 @@
   --bs-link-color:        #0891b2;
   --bs-link-hover-color:  #0772a0;
   --bs-border-radius:     0.5rem;
-  --bs-body-bg:           #f1f5f9;
+  --bs-body-bg:           #f0ebe0;
   --bs-font-sans-serif:   system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
