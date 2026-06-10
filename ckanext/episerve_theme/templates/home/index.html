@@ -1,0 +1,29 @@
+{% ckan_extends %}
+
+{% block subtitle %}{{ _('Epidemic Simulation & Data Service Platform') }}{% endblock %}
+
+{% block maintag %}{% endblock %}
+{% block toolbar %}{% endblock %}
+{% block breadcrumb %}{% endblock %}
+
+{% block content %}
+<div class="epi-homepage">
+  {{ self.flash() }}
+  <div class="epi-hero-upper">
+    <h1 class="epi-hero-heading">
+      Epidemic Simulation &amp;<br>
+      <span class="epi-hero-heading-accent">Data Service Platform</span>
+    </h1>
+    <p class="epi-hero-sub">{{ _('Open simulation platform for infectious disease modelling') }}<br>{{ _('and pandemic preparedness in Germany.') }}</p>
+    <form class="epi-hero-form" action="{{ h.url_for('dataset.search') }}" method="get">
+      <div class="epi-hero-search">
+        <input type="text" name="q" class="epi-hero-input" placeholder="{{ _('Explore datasets...') }}" autocomplete="off" aria-label="{{ _('Search datasets') }}">
+        <button type="submit" class="epi-hero-btn">{{ _('Search') }}</button>
+      </div>
+    </form>
+  </div>
+  <div class="epi-hero-lower">
+    <img src="https://episerve.zib.de/img/hero.png" alt="{{ _('EPISERVE platform visualization') }}" class="epi-hero-img">
+  </div>
+</div>
+{% endblock %}

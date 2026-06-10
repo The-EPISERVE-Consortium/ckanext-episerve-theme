@@ -393,3 +393,94 @@ a.tag:hover { background: #e0f2fe; border-color: var(--epi-cyan); color: var(--e
 }
 .footer-divider a { color: rgba(255,255,255,0.35); }
 .footer-divider a:hover { color: rgba(255,255,255,0.7); }
+
+/* ── Landing page hero ────────────────────────────────────────────── */
+.epi-homepage {
+  margin: 0;
+  padding: 0;
+}
+
+/* Cancel any wrapper padding CKAN might add around the content block */
+body .epi-homepage {
+  margin-top: -1rem;
+}
+
+.epi-hero-upper {
+  background: #f0ebe0;
+  text-align: center;
+  padding: 4.5rem 1rem 3.5rem;
+}
+
+.epi-hero-heading {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 800;
+  line-height: 1.2;
+  color: #1a2a14;
+  margin-bottom: 1rem;
+}
+
+.epi-hero-heading-accent {
+  color: #2e7d32;
+}
+
+.epi-hero-sub {
+  color: #555;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  margin-bottom: 2.25rem;
+}
+
+.epi-hero-form {
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+.epi-hero-search {
+  display: flex;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.14);
+  overflow: hidden;
+}
+
+.epi-hero-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 0.9rem 1.25rem;
+  font-size: 1rem;
+  color: #333;
+  background: transparent;
+}
+
+.epi-hero-input::placeholder {
+  color: #999;
+}
+
+.epi-hero-btn {
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  padding: 0.9rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.epi-hero-btn:hover {
+  background: #1b5e20;
+}
+
+.epi-hero-lower {
+  line-height: 0;
+}
+
+.epi-hero-img {
+  width: 100%;
+  display: block;
+  max-height: 55vh;
+  object-fit: cover;
+  object-position: top center;
+}
