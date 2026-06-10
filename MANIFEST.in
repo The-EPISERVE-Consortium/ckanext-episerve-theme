@@ -1,0 +1,2 @@
+recursive-include ckanext/episerve_theme/templates *
+recursive-include ckanext/episerve_theme/fanstatic *

@@ -1,0 +1,74 @@
+{#
+Dataset card for search results and group/org listings.
+
+package        - A package dict to display.
+item_class     - Extra class for the <li> (unused visually, kept for compat).
+hide_resources - If true hides the format badges.
+#}
+{% set title = package.title or package.name %}
+{% set notes = h.markdown_extract(package.notes, extract_length=200) %}
+
+{% block package_item %}
+<li class="{{ item_class or 'dataset-item' }}">
+  {% block content %}
+  <div class="dataset-card">
+
+    {% block heading %}
+    <h2 class="dataset-heading">
+      {% block heading_private %}
+      {% if package.private %}
+        <span class="badge bg-secondary dataset-private me-1">
+          <i class="fa fa-lock"></i> {{ _('Private') }}
+        </span>
+      {% endif %}
+      {% endblock %}
+      {% block heading_title %}
+      <a href="{{ h.url_for('%s.read' % package.type, id=package.name) }}" title="{{ title }}">
+        {{ title | truncate(90) }}
+      </a>
+      {% endblock %}
+      {% block heading_meta %}
+      {% if package.get('state', '').startswith('draft') %}
+        <span class="badge bg-info ms-1">{{ _('Draft') }}</span>
+      {% elif package.get('state', '').startswith('deleted') %}
+        <span class="badge bg-danger ms-1">{{ _('Deleted') }}</span>
+      {% endif %}
+      {% endblock %}
+    </h2>
+    {% endblock %}
+
+    {% block notes %}
+    {% if notes %}
+      <p class="dataset-notes">{{ notes | urlize }}</p>
+    {% else %}
+      <p class="dataset-notes empty">{{ _('No description provided') }}</p>
+    {% endif %}
+    {% endblock %}
+
+    <div class="dataset-card-meta">
+      {% block resources %}
+      {% if package.resources and not hide_resources %}
+        {% for fmt in h.dict_list_reduce(package.resources, 'format') %}
+          <span class="badge badge-format" data-format="{{ fmt.lower() }}">{{ fmt or '?' }}</span>
+        {% endfor %}
+      {% endif %}
+      {% endblock %}
+
+      {% if package.organization %}
+        <span class="badge badge-org">{{ package.organization.title or package.organization.name }}</span>
+      {% endif %}
+
+      <span class="dataset-card-spacer"></span>
+
+      {% if package.metadata_modified %}
+        <span class="badge badge-date">
+          <i class="fa fa-clock-o me-1" aria-hidden="true"></i>
+          {{ h.date_str_to_datetime(package.metadata_modified) | datetime }}
+        </span>
+      {% endif %}
+    </div>
+
+  </div>
+  {% endblock %}
+</li>
+{% endblock %}
