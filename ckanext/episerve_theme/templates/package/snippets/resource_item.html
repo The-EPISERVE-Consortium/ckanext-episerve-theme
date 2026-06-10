@@ -15,7 +15,7 @@ can_edit - Whether the current user may edit this resource
       {{ h.resource_display_name(res) | truncate(60) }}
     </a>
     {% if res.format %}
-    <span class="format-label" property="dc:format" data-format="{{ res.format.lower() }}">
+    <span class="epi-format-tag" property="dc:format" data-format="{{ res.format.lower() }}">
       {{ h.get_translated(res, 'format') }}
     </span>
     {% endif %}
