@@ -32,25 +32,33 @@
   <div class="epi-ds-body">
     <ul class="nav epi-ds-tabs" role="tablist">
       <li class="nav-item" role="presentation">
-        <button class="epi-ds-tab active" data-bs-toggle="tab" data-bs-target="#tab-resources"
-                type="button" role="tab" aria-selected="true">{{ _('Resources') }}</button>
+        <button class="epi-ds-tab active" type="button"
+                onclick="epiTab(this,'tab-resources')">{{ _('Resources') }}</button>
       </li>
       <li class="nav-item" role="presentation">
-        <button class="epi-ds-tab" data-bs-toggle="tab" data-bs-target="#tab-info"
-                type="button" role="tab" aria-selected="false">{{ _('Additional Info') }}</button>
+        <button class="epi-ds-tab" type="button"
+                onclick="epiTab(this,'tab-info')">{{ _('Additional Info') }}</button>
       </li>
     </ul>
-    <div class="tab-content epi-ds-tab-content">
-      <div class="tab-pane fade show active" id="tab-resources" role="tabpanel">
+    <div class="epi-ds-tab-content">
+      <div class="epi-pane" id="tab-resources">
         {% snippet "package/snippets/resources_list.html", pkg=pkg, resources=pkg.resources,
            can_edit=h.check_access('package_update', {'id': pkg.id}) %}
         {% snippet "package/snippets/tags.html", tags=pkg.tags %}
       </div>
-      <div class="tab-pane fade" id="tab-info" role="tabpanel">
+      <div class="epi-pane" id="tab-info" style="display:none">
         {% snippet "package/snippets/additional_info.html", pkg_dict=pkg %}
       </div>
     </div>
   </div>
 
 </div>
+<script>
+function epiTab(btn, targetId) {
+  document.querySelectorAll('.epi-ds-tab').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('.epi-pane').forEach(function(p){ p.style.display = 'none'; });
+  btn.classList.add('active');
+  document.getElementById(targetId).style.display = 'block';
+}
+</script>
 {% endblock %}
