@@ -208,7 +208,9 @@ body { background: var(--epi-surface); color: var(--epi-text); }
 .nav-facet .nav-item a { padding: 0.3rem 1rem; font-size: 0.825rem; color: var(--epi-text); display: flex; justify-content: space-between; align-items: center; text-decoration: none; }
 .nav-facet .nav-item a:hover { background: var(--epi-surface); color: var(--epi-navy); }
 .nav-facet .nav-item.active a { color: var(--epi-cyan); font-weight: 600; }
-.nav-facet .item-count.badge { background: var(--epi-surface); color: var(--epi-muted); border: 1px solid var(--epi-border); font-size: 0.7rem; font-weight: 500; }
+.nav-facet .item-count.badge { background: var(--epi-navy); color: #fff; border-radius: 0.25rem; font-size: 0.7rem; font-weight: 600; padding: 0.2em 0.45em; min-width: 1.5em; text-align: center; }
+.nav-facet .nav-item.active .item-count.badge { background: var(--epi-cyan); }
+.nav-facet .hidden.separator { display: none; }
 .facet-close { color: var(--epi-muted); margin-left: 0.25rem; }
 .module-footer { padding: 0.4rem 1rem; border-top: 1px solid var(--epi-border); }
 .module-footer .read-more { font-size: 0.775rem; color: var(--epi-cyan); text-decoration: none; }
