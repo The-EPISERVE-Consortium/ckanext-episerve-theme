@@ -11,8 +11,5 @@ setup(
         "ckan.plugins": [
             "episerve_theme = ckanext.episerve_theme.plugin:EPIServeThemePlugin",
         ],
-        "fanstatic.libraries": [
-            "episerve_theme = ckanext.episerve_theme.fanstatic:episerve_theme",
-        ],
     },
 )
