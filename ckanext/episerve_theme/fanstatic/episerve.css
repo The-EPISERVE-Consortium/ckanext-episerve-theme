@@ -123,12 +123,29 @@ body {
   border-radius: 0.75rem;
   padding: 1.1rem 1.4rem;
   transition: box-shadow 0.15s, border-color 0.15s;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
 }
 .dataset-card:hover {
   box-shadow: 0 2px 12px rgba(30,58,95,0.08);
   border-color: var(--epi-cyan);
 }
-.dataset-card .dataset-heading { font-size: 1rem; font-weight: 600; margin: 0 0 0.35rem; line-height: 1.4; }
+.epi-card-icon {
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.5rem;
+  background: rgba(8,145,178,0.10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: var(--epi-cyan);
+  margin-top: 0.1rem;
+}
+.epi-card-body { flex: 1; min-width: 0; }
+.dataset-card .dataset-heading { font-size: 1.1rem; font-weight: 600; margin: 0 0 0.35rem; line-height: 1.4; }
 .dataset-card .dataset-heading a { color: var(--epi-navy); text-decoration: none; }
 .dataset-card .dataset-heading a:hover { color: var(--epi-cyan); text-decoration: underline; }
 .dataset-card .dataset-notes { color: var(--epi-muted); font-size: 0.85rem; line-height: 1.5; margin-bottom: 0.75rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

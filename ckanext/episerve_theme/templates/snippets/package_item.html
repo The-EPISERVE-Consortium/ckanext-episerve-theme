@@ -13,6 +13,12 @@ hide_resources - If true hides the format badges.
   {% block content %}
   <div class="dataset-card">
 
+    <div class="epi-card-icon" aria-hidden="true">
+      <i class="fa fa-database"></i>
+    </div>
+
+    <div class="epi-card-body">
+
     {% block heading %}
     <h2 class="dataset-heading">
       {% block heading_private %}
@@ -58,8 +64,15 @@ hide_resources - If true hides the format badges.
           {{ _('Updated') }} {{ h.render_datetime(package.metadata_modified, date_format='%b %d, %Y') }}
         </span>
       {% endif %}
+      {% if package.tags %}
+        <span class="epi-meta-item">
+          <i class="fa fa-tag" aria-hidden="true"></i>
+          {{ package.tags | map(attribute='display_name') | join(', ') }}
+        </span>
+      {% endif %}
     </div>
 
+    </div>{# /epi-card-body #}
   </div>
   {% endblock %}
 </li>
