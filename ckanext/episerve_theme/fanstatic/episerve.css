@@ -156,7 +156,14 @@ body { background: var(--epi-surface); color: var(--epi-text); }
 .filter-list .pill .remove:hover { opacity: 1; }
 
 /* ── Sidebar facets ────────────────────────────────────────── */
-/* Reset core CKAN .filters > div which adds background + overflow:hidden */
+/* Strip any border/background from the outer .filters wrapper */
+#facet-sidebar,
+.filters {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+/* Inner div is the single visible white container */
 .filters > div,
 #facet-sidebar > div {
   background: #fff !important;
