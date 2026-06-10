@@ -23,8 +23,16 @@
 }
 
 /* ── Page ──────────────────────────────────────────────────── */
-html, body { background-color: #f0ebe0 !important; color: var(--epi-text); }
-.main { padding-top: 1.5rem; padding-bottom: 2rem; background: #f0ebe0 !important; }
+html {
+  background: url('https://episerve.zib.de/img/hero.png') center top / cover fixed no-repeat;
+  background-color: #2a2a2a;
+}
+html, body { color: var(--epi-text); }
+body {
+  background: rgba(240, 235, 224, 0.84) !important;
+  min-height: 100vh;
+}
+.main { padding-top: 1.5rem; padding-bottom: 2rem; background: transparent !important; }
 
 /* ── Account masthead (top bar) ────────────────────────────── */
 .account-masthead {
