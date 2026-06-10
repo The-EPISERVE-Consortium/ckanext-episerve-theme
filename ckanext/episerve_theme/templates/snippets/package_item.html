@@ -47,14 +47,14 @@ hide_resources - If true hides the format badges.
 
     <div class="dataset-card-meta">
       {% if package.metadata_created %}
-        <span class="badge badge-date">
-          <i class="fa fa-calendar-o me-1" aria-hidden="true"></i>
+        <span class="epi-meta-item">
+          <i class="fa fa-clock-o" aria-hidden="true"></i>
           {{ _('Created') }} {{ h.render_datetime(package.metadata_created, date_format='%b %d, %Y') }}
         </span>
       {% endif %}
       {% if package.metadata_modified %}
-        <span class="badge badge-date">
-          <i class="fa fa-refresh me-1" aria-hidden="true"></i>
+        <span class="epi-meta-item">
+          <i class="fa fa-refresh" aria-hidden="true"></i>
           {{ _('Updated') }} {{ h.render_datetime(package.metadata_modified, date_format='%b %d, %Y') }}
         </span>
       {% endif %}

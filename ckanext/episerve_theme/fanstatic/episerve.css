@@ -573,3 +573,14 @@ body.epi-home .main { padding-top: 0 !important; padding-bottom: 0 !important; }
 #facet-sidebar > div {
   margin: 0.5rem 0 !important;
 }
+
+/* Inline date metadata on dataset cards — no box, no uppercase */
+.epi-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.825rem;
+  color: var(--epi-muted);
+  margin-right: 1rem;
+}
+.epi-meta-item .fa { font-size: 0.8rem; opacity: 0.75; }
