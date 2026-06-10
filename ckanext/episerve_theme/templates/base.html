@@ -1,5 +1,9 @@
 {% ckan_extends %}
 
+{% block favicon %}
+<link rel="icon" href="https://episerve.zib.de/img/favicon.ico">
+{% endblock %}
+
 {% block styles %}
   {{ super() }}
   {% asset 'episerve_theme/episerve_theme' %}
