@@ -175,6 +175,35 @@ body { background: var(--epi-surface); color: var(--epi-text); }
   align-items: center;
   gap: 0.4rem;
 }
+
+/* ── Filter toggle button ───────────────────────────────────── */
+.epi-filter-toggle {
+  background: var(--epi-navy);
+  color: #fff;
+  border: none;
+  font-size: 0.8rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 0.4rem;
+}
+.epi-filter-toggle:hover,
+.epi-filter-toggle:focus { background: var(--epi-navy-dark); color: #fff; }
+
+/* ── Collapsible facet groups ───────────────────────────────── */
+.epi-facet-group + .epi-facet-group { margin-top: 0.5rem; }
+.epi-facet-heading {
+  cursor: pointer;
+  user-select: none;
+  justify-content: space-between;
+}
+.epi-facet-heading:hover { background: var(--epi-navy-dark); }
+.epi-facet-chevron {
+  transition: transform 0.2s ease;
+  font-size: 0.75rem;
+  margin-left: auto;
+}
+.epi-facet-heading[aria-expanded="false"] .epi-facet-chevron {
+  transform: rotate(-90deg);
+}
 .nav-facet { padding: 0.25rem 0; }
 .nav-facet .nav-item a { padding: 0.3rem 1rem; font-size: 0.825rem; color: var(--epi-text); display: flex; justify-content: space-between; align-items: center; text-decoration: none; }
 .nav-facet .nav-item a:hover { background: var(--epi-surface); color: var(--epi-navy); }

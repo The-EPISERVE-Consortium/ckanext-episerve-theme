@@ -12,11 +12,19 @@
   <div class="module-content">
 
     {% block page_primary_action %}
-    {% if h.check_access('package_create') %}
-    <div class="page_primary_action mb-3">
-      {% snippet 'snippets/add_dataset.html', dataset_type=dataset_type %}
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      {% if h.check_access('package_create') %}
+        {% snippet 'snippets/add_dataset.html', dataset_type=dataset_type %}
+      {% endif %}
+      <button class="btn btn-sm epi-filter-toggle ms-auto"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#facet-sidebar"
+              aria-expanded="true"
+              aria-controls="facet-sidebar">
+        <i class="fa fa-filter me-1"></i>{{ _('Filters') }}
+      </button>
     </div>
-    {% endif %}
     {% endblock %}
 
     {% block form %}
@@ -75,7 +83,7 @@
 {% endblock %}
 
 {% block secondary_content %}
-<div class="filters">
+<div id="facet-sidebar" class="filters collapse show">
   <div>
     {% for facet in facet_titles %}
       {% snippet 'snippets/facet_list.html', title=facet_titles[facet], name=facet, search_facets=search_facets %}
