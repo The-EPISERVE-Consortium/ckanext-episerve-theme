@@ -487,3 +487,66 @@ body.epi-home .main { padding-top: 0 !important; padding-bottom: 0 !important; }
 
 /* Hide main navbar on all pages — account bar (Log in) stays */
 .masthead { display: none !important; }
+
+/* ── Dataset detail page ──────────────────────────────────────────── */
+.epi-ds-header {
+  background: #fff;
+  border: 1px solid var(--epi-border);
+  border-radius: 0.75rem;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1rem;
+}
+
+.epi-ds-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--epi-navy);
+  margin: 0 0 0.5rem;
+  line-height: 1.3;
+}
+
+.epi-ds-desc {
+  color: var(--epi-muted);
+  font-size: 0.95rem;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.epi-ds-body {
+  background: #fff;
+  border: 1px solid var(--epi-border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.epi-ds-tabs {
+  border-bottom: 1px solid var(--epi-border);
+  padding: 0 1.25rem;
+  background: #f8fafc;
+  gap: 0;
+}
+
+.epi-ds-tab {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--epi-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.8rem 1.1rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.epi-ds-tab:hover { color: var(--epi-navy); border-bottom-color: var(--epi-border); }
+
+.epi-ds-tab.active {
+  color: var(--epi-navy);
+  border-bottom-color: var(--epi-cyan);
+  font-weight: 600;
+}
+
+.epi-ds-tab-content { padding: 1.25rem 1.75rem; }
+
+/* Remove the "Data and Resources" heading inside the tab — redundant */
+.epi-ds-tab-content .module-heading { display: none; }
