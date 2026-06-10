@@ -78,13 +78,13 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/apexcharts@3/dist/apexcharts.min.js"></script>
 <script>
-function epiChart(elId, color, yLabel, series) {
+function epiChart(elId, color, yLabel, tooltipName, series) {
   new ApexCharts(document.getElementById(elId), {
     chart: {
       type: 'area', height: '100%', toolbar: { show: false },
       zoom: { enabled: false }, animations: { enabled: false }, parentHeightOffset: 0
     },
-    series: [{ name: yLabel, data: series }],
+    series: [{ name: tooltipName, data: series }],
     colors: [color],
     stroke: { width: 2.5, curve: 'smooth' },
     fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.18, opacityTo: 0.02, stops: [0, 100] } },
@@ -118,7 +118,7 @@ function isoWeekToTs(isoWeek) {
   fetch('/metabase-proxy/84b950d2-0cb1-4eba-a6a7-26230d982bcf')
     .then(function (r) { return r.json(); })
     .then(function (data) {
-      epiChart('epi-chart-0', '#f59e0b', 'Incidence per 100,000 (7-day)',
+      epiChart('epi-chart-0', '#f59e0b', 'Incidence per 100,000 (7-day)', 'Incidence',
         data.map(function (r) { return [new Date(r['Meldedatum'] + 'T00:00:00').getTime(), r['inzidenz_7d']]; }));
     })
     .catch(function () {
@@ -130,7 +130,7 @@ function isoWeekToTs(isoWeek) {
   fetch('/metabase-proxy/4ece3e1c-3fb9-4f07-aa60-d8a7f1856f3d')
     .then(function (r) { return r.json(); })
     .then(function (data) {
-      epiChart('epi-chart-1', '#10b981', 'Incidence per 100,000 (7-week avg)',
+      epiChart('epi-chart-1', '#10b981', 'Incidence per 100,000 (7-week avg)', 'Incidence',
         data.map(function (r) { return [isoWeekToTs(r['Kalenderwoche']), r['inzidenz_7w_avg']]; }));
     })
     .catch(function () {
@@ -142,7 +142,7 @@ function isoWeekToTs(isoWeek) {
   fetch('/metabase-proxy/939173bd-30c3-4410-9c92-9a421f579b7e')
     .then(function (r) { return r.json(); })
     .then(function (data) {
-      epiChart('epi-chart-2', '#8b5cf6', 'Incidence per 100,000 (7-week avg)',
+      epiChart('epi-chart-2', '#8b5cf6', 'Incidence per 100,000 (7-week avg)', 'Incidence',
         data.map(function (r) { return [isoWeekToTs(r['Meldewoche']), r['inzidenz_7w_avg']]; }));
     })
     .catch(function () {
