@@ -610,6 +610,8 @@ body.epi-home .main { padding-top: 0 !important; padding-bottom: 0 !important; }
   margin-right: 1rem;
 }
 .epi-meta-item .fa { font-size: 0.8rem; opacity: 0.75; }
+.epi-tag-link { color: var(--epi-muted); text-decoration: none; }
+.epi-tag-link:hover { color: var(--epi-cyan); text-decoration: underline; }
 
 /* Hero quick-link pills */
 .epi-hero-quicklinks {

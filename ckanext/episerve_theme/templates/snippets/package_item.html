@@ -67,7 +67,9 @@ hide_resources - If true hides the format badges.
       {% if package.tags %}
         <span class="epi-meta-item">
           <i class="fa fa-tag" aria-hidden="true"></i>
-          {{ package.tags | map(attribute='display_name') | join(', ') }}
+          {% for tag in package.tags %}
+            <a href="{{ h.url_for('dataset.search', tags=tag.name) }}" class="epi-tag-link">{{ tag.display_name }}</a>{% if not loop.last %}, {% endif %}
+          {% endfor %}
         </span>
       {% endif %}
     </div>
