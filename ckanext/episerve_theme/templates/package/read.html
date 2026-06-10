@@ -6,7 +6,7 @@
 
 {# Expand primary to full width #}
 {% block primary %}
-<div class="primary col-12" role="main">{% block primary_content %}{% endblock %}</div>
+<div class="primary col-12" role="main">{{ self.primary_content() }}</div>
 {% endblock %}
 
 {% block primary_content %}
