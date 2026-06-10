@@ -523,14 +523,24 @@ body.epi-home .main { padding-top: 0 !important; padding-bottom: 0 !important; }
   display: flex;
   flex-direction: column;
 }
-.epi-chart-label {
-  font-size: 0.8rem;
+.epi-chart-title {
+  font-size: 1rem;
   font-weight: 600;
-  color: var(--epi-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 0 0 0.75rem;
+  color: var(--epi-navy);
+  margin: 0 0 0.6rem;
 }
+.epi-chart-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--epi-border);
+  font-size: 0.75rem;
+}
+.epi-chart-source { color: var(--epi-muted); }
+.epi-chart-link { color: var(--epi-cyan); text-decoration: none; }
+.epi-chart-link:hover { text-decoration: underline; }
 .epi-chart-wrap {
   flex: 1;
   position: relative;

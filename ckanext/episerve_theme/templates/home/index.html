@@ -38,9 +38,14 @@
       <div class="row g-3">
         <div class="col-md-4">
           <div class="epi-chart-card">
-            <p class="epi-chart-label">Reported cases — 7-day average</p>
+            <p class="epi-chart-title">Corona Cases in Germany</p>
             <div class="epi-chart-wrap">
               <canvas id="epi-chart-0"></canvas>
+            </div>
+            <div class="epi-chart-footer">
+              <span class="epi-chart-source">Source: RKI &middot; Updated daily</span>
+              <a href="https://metabase.episerve.zib.de/public/question/84b950d2-0cb1-4eba-a6a7-26230d982bcf"
+                 target="_blank" rel="noopener" class="epi-chart-link">View full chart &rarr;</a>
             </div>
           </div>
         </div>
@@ -64,7 +69,10 @@
   fetch('/metabase-proxy/84b950d2-0cb1-4eba-a6a7-26230d982bcf')
     .then(function (r) { return r.json(); })
     .then(function (data) {
-      var labels = data.map(function (r) { return r['Meldedatum']; });
+      var labels = data.map(function (r) {
+        var d = new Date(r['Meldedatum'] + 'T00:00:00');
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      });
       var values = data.map(function (r) { return r['faelle_7d_avg']; });
       new Chart(document.getElementById('epi-chart-0'), {
         type: 'line',
@@ -72,11 +80,11 @@
           labels: labels,
           datasets: [{
             data: values,
-            borderColor: '#0891b2',
-            backgroundColor: 'rgba(8,145,178,0.08)',
-            borderWidth: 2,
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245,158,11,0.15)',
+            borderWidth: 2.5,
             pointRadius: 0,
-            tension: 0.3,
+            tension: 0.4,
             fill: true
           }]
         },
@@ -93,7 +101,17 @@
               grid: { display: false }
             },
             y: {
-              ticks: { font: { size: 10 }, color: '#64748b' },
+              title: {
+                display: true,
+                text: 'Cases (7-day average)',
+                font: { size: 10 },
+                color: '#64748b'
+              },
+              ticks: {
+                font: { size: 10 },
+                color: '#64748b',
+                callback: function (v) { return v.toLocaleString('en-US'); }
+              },
               grid: { color: 'rgba(0,0,0,0.05)' }
             }
           }
