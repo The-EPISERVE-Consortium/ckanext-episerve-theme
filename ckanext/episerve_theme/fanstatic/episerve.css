@@ -409,7 +409,7 @@ a.tag:hover { background: #e0f2fe; border-color: var(--epi-cyan); color: var(--e
 .site-footer {
   background: #ede8dd;
   color: var(--epi-muted);
-  padding: 2rem 0 0;
+  padding: 1rem 0 0;
   margin-top: 3rem;
   border-top: 1px solid #d4cfc5;
   font-size: 0.85rem;
@@ -420,7 +420,7 @@ a.tag:hover { background: #e0f2fe; border-color: var(--epi-cyan); color: var(--e
 .epi-footer-col { padding: 0 2rem; }
 .epi-footer-col-divider { border-right: 1px solid #d4cfc5; }
 .epi-footer-brand-row { display: flex; align-items: flex-start; gap: 1rem; }
-.epi-footer-logo-img { height: 12rem; width: auto; flex-shrink: 0; }
+.epi-footer-logo-img { height: 6rem; width: auto; flex-shrink: 0; }
 .epi-footer-logo {
   font-size: 1.3rem;
   font-weight: 800;
@@ -443,7 +443,7 @@ a.tag:hover { background: #e0f2fe; border-color: var(--epi-cyan); color: var(--e
 .epi-footer-links li { margin-bottom: 0.75rem; }
 .epi-footer-links a { color: var(--epi-muted); font-size: 0.875rem; }
 .epi-footer-links a:hover { color: var(--epi-cyan); }
-.epi-footer-funding-img { max-height: 10.5rem; width: auto; display: block; margin: 0 auto; }
+.epi-footer-funding-img { max-height: 5rem; width: auto; display: block; margin: 0 auto; }
 .epi-footer-bottom {
   border-top: 1px solid #d4cfc5;
   padding: 0.65rem 0;
