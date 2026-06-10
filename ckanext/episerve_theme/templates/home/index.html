@@ -50,8 +50,16 @@
           </div>
         </div>
         <div class="col-md-4">
-          <div class="epi-chart-placeholder">
-            <span>{{ _('Chart placeholder') }}</span>
+          <div class="epi-chart-card">
+            <p class="epi-chart-title">Influenza-like Illness — Grippeweb</p>
+            <div class="epi-chart-wrap">
+              <canvas id="epi-chart-1"></canvas>
+            </div>
+            <div class="epi-chart-footer">
+              <span class="epi-chart-source">Source: Grippeweb &middot; Updated weekly</span>
+              <a href="https://metabase.episerve.zib.de/public/question/4ece3e1c-3fb9-4f07-aa60-d8a7f1856f3d"
+                 target="_blank" rel="noopener" class="epi-chart-link">View full chart &rarr;</a>
+            </div>
           </div>
         </div>
         <div class="col-md-4">
@@ -120,6 +128,71 @@
     })
     .catch(function () {
       var wrap = document.getElementById('epi-chart-0').parentElement;
+      wrap.innerHTML = '<p style="text-align:center;padding-top:3rem;color:#64748b;font-size:0.85rem;">Chart could not be loaded.</p>';
+    });
+}());
+
+(function () {
+  function isoWeekToDate(isoWeek) {
+    var parts = isoWeek.split('-W');
+    var year = parseInt(parts[0]), week = parseInt(parts[1]);
+    var d = new Date(year, 0, 1 + (week - 1) * 7);
+    var dow = d.getDay();
+    if (dow <= 4) d.setDate(d.getDate() - dow + 1);
+    else d.setDate(d.getDate() + 8 - dow);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+  fetch('/metabase-proxy/4ece3e1c-3fb9-4f07-aa60-d8a7f1856f3d')
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      var labels = data.map(function (r) { return isoWeekToDate(r['Kalenderwoche']); });
+      var values = data.map(function (r) { return r['inzidenz_7w_avg']; });
+      new Chart(document.getElementById('epi-chart-1'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: values,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16,185,129,0.12)',
+            borderWidth: 2.5,
+            pointRadius: 0,
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { mode: 'index', intersect: false }
+          },
+          scales: {
+            x: {
+              ticks: { maxTicksLimit: 6, font: { size: 10 }, color: '#64748b' },
+              grid: { display: false }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Incidence (7-week average)',
+                font: { size: 10 },
+                color: '#64748b'
+              },
+              ticks: {
+                font: { size: 10 },
+                color: '#64748b',
+                callback: function (v) { return v.toLocaleString('en-US'); }
+              },
+              grid: { color: 'rgba(0,0,0,0.05)' }
+            }
+          }
+        }
+      });
+    })
+    .catch(function () {
+      var wrap = document.getElementById('epi-chart-1').parentElement;
       wrap.innerHTML = '<p style="text-align:center;padding-top:3rem;color:#64748b;font-size:0.85rem;">Chart could not be loaded.</p>';
     });
 }());
