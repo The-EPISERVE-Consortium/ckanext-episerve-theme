@@ -226,10 +226,10 @@ body { background: var(--epi-surface); color: var(--epi-text); }
   font-size: 0.9rem;
   color: var(--epi-navy);
   text-decoration: none;
-  display: inline-block;
 }
 .resource-item a.heading:hover { color: var(--epi-cyan); }
 .resource-item .format-label {
+  display: inline-block;
   background: #e0f2fe;
   color: #075985;
   font-size: 0.68rem;

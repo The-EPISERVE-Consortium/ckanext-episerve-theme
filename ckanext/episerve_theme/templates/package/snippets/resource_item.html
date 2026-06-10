@@ -13,10 +13,12 @@ can_edit - Whether the current user may edit this resource
     {% block resource_item_title %}
     <a class="heading" href="{{ url }}" title="{{ res.name or res.description }}">
       {{ h.resource_display_name(res) | truncate(60) }}
-      <span class="format-label" property="dc:format" data-format="{{ res.format.lower() or 'data' }}">
-        {{ h.get_translated(res, 'format') }}
-      </span>
     </a>
+    {% if res.format %}
+    <span class="format-label" property="dc:format" data-format="{{ res.format.lower() }}">
+      {{ h.get_translated(res, 'format') }}
+    </span>
+    {% endif %}
     {% endblock %}
     {% block resource_item_description %}
     {% if res.description %}
