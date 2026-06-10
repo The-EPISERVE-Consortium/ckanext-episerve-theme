@@ -38,7 +38,7 @@
       <div class="row g-3">
         <div class="col-md-4">
           <div class="epi-chart-card">
-            <p class="epi-chart-title">Corona Cases in Germany</p>
+            <p class="epi-chart-title">Corona Incidence in Germany</p>
             <div class="epi-chart-wrap">
               <canvas id="epi-chart-0"></canvas>
             </div>
@@ -86,7 +86,7 @@
         var d = new Date(r['Meldedatum'] + 'T00:00:00');
         return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       });
-      var values = data.map(function (r) { return r['faelle_7d_avg']; });
+      var values = data.map(function (r) { return r['inzidenz_7d']; });
       new Chart(document.getElementById('epi-chart-0'), {
         type: 'line',
         data: {
@@ -116,7 +116,7 @@
             y: {
               title: {
                 display: true,
-                text: 'Cases (7-day average)',
+                text: 'Incidence per 100,000 (7-day)',
                 font: { size: 10 },
                 color: '#64748b'
               },
