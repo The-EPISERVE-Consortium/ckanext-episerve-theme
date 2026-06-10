@@ -159,12 +159,12 @@ body { background: var(--epi-surface); color: var(--epi-text); }
 /* Reset core CKAN .filters > div which adds background + overflow:hidden */
 .filters > div,
 #facet-sidebar > div {
-  background: none !important;
-  border-radius: 0 !important;
-  overflow: visible !important;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  background: #fff !important;
+  border: 1px solid var(--epi-border) !important;
+  border-radius: 0.5rem !important;
+  overflow: hidden !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  display: block;
 }
 .module.module-narrow.module-shallow {
   background: var(--epi-white);
@@ -199,14 +199,17 @@ body { background: var(--epi-surface); color: var(--epi-text); }
 
 /* ── Facet groups — clean card style ───────────────────────── */
 .epi-facet-group {
-  border-radius: 0.5rem !important;
-  border: 1px solid var(--epi-border) !important;
-  background: #fff;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent;
   padding: 1rem 1rem 0;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  box-shadow: none !important;
   overflow: visible !important;
 }
-.epi-facet-group + .epi-facet-group { margin-top: 0.75rem; }
+.epi-facet-group + .epi-facet-group {
+  margin-top: 0;
+  border-top: 1px solid var(--epi-border) !important;
+}
 .epi-facet-group .module-content { border: none !important; border-radius: 0 !important; padding: 0 0 0.75rem !important; background: none !important; box-shadow: none !important; }
 
 /* No navy heading — plain bold title */
