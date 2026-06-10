@@ -402,10 +402,8 @@ a.tag:hover { background: #e0f2fe; border-color: var(--epi-cyan); color: var(--e
   padding: 0;
 }
 
-/* Cancel any wrapper padding CKAN might add around the content block */
-body .epi-homepage {
-  margin-top: -1rem;
-}
+/* Remove CKAN main wrapper padding on home page */
+body.epi-home .main { padding-top: 0 !important; padding-bottom: 0 !important; }
 
 .epi-hero-upper {
   background: #f0ebe0;
