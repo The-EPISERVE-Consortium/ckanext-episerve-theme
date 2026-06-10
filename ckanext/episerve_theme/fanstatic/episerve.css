@@ -485,5 +485,5 @@ body.epi-home .main { padding-top: 0 !important; padding-bottom: 0 !important; }
   object-position: top center;
 }
 
-/* Hide main navbar on landing page — account bar (Log in) stays */
-body.epi-home .masthead { display: none !important; }
+/* Hide main navbar on all pages — account bar (Log in) stays */
+.masthead { display: none !important; }
