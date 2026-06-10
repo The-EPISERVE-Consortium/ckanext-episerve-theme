@@ -204,6 +204,7 @@ body {
   display: block;
   margin-top: 1.15rem !important;
   margin-right: 0.75rem !important;
+  margin-left: 0.75rem !important;
 }
 .module.module-narrow.module-shallow {
   background: var(--epi-white);
@@ -287,6 +288,7 @@ section.epi-facet-group + section.epi-facet-group {
   padding: 0.4rem 1rem;
 }
 .nav-facet { padding: 0.25rem 0; }
+.nav-facet .nav-item { border: none !important; }
 .nav-facet .nav-item a { padding: 0.3rem 1rem; font-size: 0.825rem; color: var(--epi-text); display: flex; justify-content: space-between; align-items: center; text-decoration: none; }
 .nav-facet .nav-item a:hover { background: var(--epi-surface); color: var(--epi-navy); }
 .nav-facet .nav-item.active a { color: var(--epi-cyan); font-weight: 600; }
