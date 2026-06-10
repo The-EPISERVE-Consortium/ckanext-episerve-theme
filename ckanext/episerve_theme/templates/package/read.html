@@ -39,6 +39,10 @@
         <button class="epi-ds-tab" type="button"
                 onclick="epiTab(this,'tab-info')">{{ _('Additional Info') }}</button>
       </li>
+      <li class="nav-item" role="presentation">
+        <button class="epi-ds-tab" type="button"
+                onclick="epiTab(this,'tab-api')">{{ _('API Access') }}</button>
+      </li>
     </ul>
     <div class="epi-ds-tab-content">
       <div class="epi-pane" id="tab-resources">
@@ -48,6 +52,29 @@
       </div>
       <div class="epi-pane" id="tab-info" style="display:none">
         {% snippet "package/snippets/additional_info.html", pkg_dict=pkg %}
+      </div>
+      <div class="epi-pane" id="tab-api" style="display:none">
+        <p class="epi-api-intro">{{ _('You can access all data via a web API using e.g. Python or curl.') }}</p>
+
+        <div class="epi-code-block">
+          <div class="epi-code-label">Python</div>
+          <pre class="epi-code-pre"><code>import requests
+
+dataset_id = "{{ pkg.name }}"
+url = "https://data.episerve.zib.de/api/3/action/package_show"
+
+response = requests.get(url, params={"id": dataset_id})
+dataset = response.json()["result"]
+
+print(dataset["title"])
+for resource in dataset["resources"]:
+    print(resource["name"], resource["url"])</code></pre>
+        </div>
+
+        <div class="epi-code-block">
+          <div class="epi-code-label">curl</div>
+          <pre class="epi-code-pre"><code>curl "https://data.episerve.zib.de/api/3/action/package_show?id={{ pkg.name }}"</code></pre>
+        </div>
       </div>
     </div>
   </div>
