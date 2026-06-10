@@ -45,6 +45,8 @@ body { background: var(--epi-surface); color: var(--epi-text); }
 .account-masthead a:hover,
 .account-masthead .btn-link:hover { color: #fff; background: none; }
 .account-masthead ul { margin: 0; display: flex; gap: 1rem; align-items: center; justify-content: flex-end; list-style: none; padding: 0; }
+.account-masthead li { border: none !important; padding-left: 0 !important; }
+.account-masthead li::before { content: none !important; }
 
 /* ── Main navbar ───────────────────────────────────────────── */
 .masthead {
