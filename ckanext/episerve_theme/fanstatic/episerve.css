@@ -295,6 +295,7 @@ section.epi-facet-group + section.epi-facet-group {
 
 /* ── Dataset detail — main content ─────────────────────────── */
 .module-content { background: var(--epi-white); border: 1px solid var(--epi-border); border-radius: 0.75rem; padding: 1.5rem; }
+.primary .module-content { margin-top: 1rem; }
 .module-content h1 { font-size: 1.4rem; font-weight: 700; color: var(--epi-navy); margin-bottom: 1rem; line-height: 1.35; }
 .notes { line-height: 1.75; color: var(--epi-text); font-size: 0.9375rem; }
 .dataset-private.badge { font-size: 0.75rem; vertical-align: middle; margin-right: 0.5rem; }
