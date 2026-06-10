@@ -183,6 +183,9 @@ body {
 .filter-list .pill .remove:hover { opacity: 1; }
 
 /* ── Sidebar facets ────────────────────────────────────────── */
+/* Remove CKAN's vertical column divider line — card borders handle separation */
+.wrapper::before { display: none !important; }
+
 /* Strip any border/background from the outer .filters wrapper */
 #facet-sidebar,
 .filters {
@@ -200,6 +203,7 @@ body {
   box-shadow: 0 1px 4px rgba(0,0,0,0.06);
   display: block;
   margin-top: 1.15rem !important;
+  margin-right: 0.75rem !important;
 }
 .module.module-narrow.module-shallow {
   background: var(--epi-white);
