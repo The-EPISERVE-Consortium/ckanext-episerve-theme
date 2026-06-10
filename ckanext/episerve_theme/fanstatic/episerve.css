@@ -207,6 +207,7 @@ body { background: var(--epi-surface); color: var(--epi-text); }
   overflow: visible !important;
 }
 .epi-facet-group + .epi-facet-group { margin-top: 0.75rem; }
+.epi-facet-group .module-content { border: none !important; border-radius: 0 !important; padding: 0 0 0.75rem !important; background: none !important; box-shadow: none !important; }
 
 /* No navy heading — plain bold title */
 .epi-facet-group .module-heading { display: none; }
