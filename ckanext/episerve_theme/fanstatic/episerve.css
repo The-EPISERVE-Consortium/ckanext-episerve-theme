@@ -190,6 +190,7 @@ body { background: var(--epi-surface); color: var(--epi-text); }
 
 /* ── Collapsible facet groups ───────────────────────────────── */
 .epi-facet-group + .epi-facet-group { margin-top: 0.5rem; }
+.epi-facet-group { border-radius: 0 !important; }
 .epi-facet-heading {
   cursor: pointer;
   user-select: none;
