@@ -1,3 +1,4 @@
-episerve.css:
+episerve_theme:
+  output: episerve_theme/episerve_theme.css
   contents:
     - episerve.css
