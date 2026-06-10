@@ -2,14 +2,11 @@
   <div class="container-fluid px-4">
     {% block footer_content %}
     <div class="row epi-footer-main">
-      <div class="col-md-5 epi-footer-brand">
+
+      <div class="col-md-4 epi-footer-col epi-footer-col-divider">
         {% block footer_about %}
         <div class="epi-footer-brand-row">
-          <svg class="epi-footer-shield" viewBox="0 0 48 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M24 2L4 10v18c0 12.5 8.5 24.2 20 28 11.5-3.8 20-15.5 20-28V10L24 2z" fill="#1e3a5f" stroke="#0891b2" stroke-width="1.5"/>
-            <line x1="24" y1="18" x2="24" y2="38" stroke="#0891b2" stroke-width="3.5" stroke-linecap="round"/>
-            <line x1="14" y1="28" x2="34" y2="28" stroke="#0891b2" stroke-width="3.5" stroke-linecap="round"/>
-          </svg>
+          <img src="https://episerve.zib.de/img/logo_episerve10.png" alt="EPISERVE" class="epi-footer-logo-img">
           <div class="epi-footer-brand-text">
             <div class="epi-footer-logo">EPISERVE</div>
             <div class="epi-footer-tagline">Epidemic Simulation &amp; Data Service Platform</div>
@@ -18,16 +15,23 @@
         <p class="epi-footer-desc">Open simulation platform and data service for infectious disease research and pandemic preparedness in Germany. Provided by the EPISERVE Consortium and hosted at Zuse Institute Berlin.</p>
         {% endblock %}
       </div>
-      <div class="col-md-1 epi-footer-divider-col d-none d-md-block"></div>
-      <div class="col-md-3 offset-md-1">
+
+      <div class="col-md-4 epi-footer-col epi-footer-col-divider">
         {% block footer_links %}
-        <p class="epi-footer-section-title">{{ _('Legal &amp; API') }}</p>
         <ul class="epi-footer-links">
           <li><a href="https://zib.de/impressum">{{ _('Legal Notice and Data Protection') }}</a></li>
           <li><a href="https://docs.ckan.org/en/latest/api/index.html">{{ _('CKAN API') }}</a></li>
         </ul>
         {% endblock %}
       </div>
+
+      <div class="col-md-4 epi-footer-col">
+        {% block footer_funding %}
+        <p class="epi-footer-funding-label">{{ _('With funding from the:') }}</p>
+        <img src="https://episerve.zib.de/img/logo-bmftr.png" alt="Federal Ministry of Research, Technology and Space" class="epi-footer-funding-img">
+        {% endblock %}
+      </div>
+
     </div>
     <div class="epi-footer-bottom">
       <span>&copy; 2026 EPISERVE Consortium. All rights reserved.</span>

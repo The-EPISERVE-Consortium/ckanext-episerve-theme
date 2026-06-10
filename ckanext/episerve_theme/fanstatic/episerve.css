@@ -409,19 +409,20 @@ a.tag:hover { background: #e0f2fe; border-color: var(--epi-cyan); color: var(--e
 .site-footer {
   background: #ede8dd;
   color: var(--epi-muted);
-  padding: 2.5rem 0 0;
+  padding: 2rem 0 0;
   margin-top: 3rem;
   border-top: 1px solid #d4cfc5;
   font-size: 0.85rem;
 }
 .site-footer a { color: var(--epi-navy); text-decoration: none; }
 .site-footer a:hover { color: var(--epi-cyan); }
-.epi-footer-main { align-items: flex-start; padding-bottom: 2rem; }
-.epi-footer-brand { padding-right: 2rem; }
-.epi-footer-brand-row { display: flex; align-items: center; gap: 0.9rem; margin-bottom: 1rem; }
-.epi-footer-shield { width: 2.75rem; height: 3.2rem; flex-shrink: 0; }
+.epi-footer-main { align-items: center; padding-bottom: 2rem; }
+.epi-footer-col { padding: 0 2rem; }
+.epi-footer-col-divider { border-right: 1px solid #d4cfc5; }
+.epi-footer-brand-row { display: flex; align-items: center; gap: 0.85rem; margin-bottom: 0.85rem; }
+.epi-footer-logo-img { height: 3rem; width: auto; flex-shrink: 0; }
 .epi-footer-logo {
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   font-weight: 800;
   color: var(--epi-navy);
   letter-spacing: 0.06em;
@@ -430,36 +431,27 @@ a.tag:hover { background: #e0f2fe; border-color: var(--epi-cyan); color: var(--e
 .epi-footer-tagline {
   font-size: 0.65rem;
   color: var(--epi-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-top: 0.2rem;
+  margin-top: 0.15rem;
 }
 .epi-footer-desc {
   font-size: 0.82rem;
   color: var(--epi-muted);
   line-height: 1.65;
-  max-width: 400px;
   margin: 0;
 }
-.epi-footer-divider-col {
-  border-left: 1px solid #d4cfc5;
-  min-height: 100px;
-}
-.epi-footer-section-title {
-  color: var(--epi-navy);
-  font-weight: 700;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  margin-bottom: 0.75rem;
-}
 .epi-footer-links { list-style: none; padding: 0; margin: 0; }
-.epi-footer-links li { margin-bottom: 0.5rem; }
-.epi-footer-links a { color: var(--epi-muted); font-size: 0.85rem; }
+.epi-footer-links li { margin-bottom: 0.75rem; }
+.epi-footer-links a { color: var(--epi-muted); font-size: 0.875rem; }
 .epi-footer-links a:hover { color: var(--epi-cyan); }
+.epi-footer-funding-label {
+  font-size: 0.75rem;
+  color: var(--epi-muted);
+  margin-bottom: 0.6rem;
+}
+.epi-footer-funding-img { max-height: 3.5rem; width: auto; }
 .epi-footer-bottom {
   border-top: 1px solid #d4cfc5;
-  padding: 0.75rem 0;
+  padding: 0.65rem 0;
   text-align: center;
   font-size: 0.75rem;
   color: var(--epi-muted);
