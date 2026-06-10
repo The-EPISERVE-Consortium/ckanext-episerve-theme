@@ -199,7 +199,7 @@ body {
   overflow: hidden !important;
   box-shadow: 0 1px 4px rgba(0,0,0,0.06);
   display: block;
-  margin-top: 1.35rem !important;
+  margin-top: 1.15rem !important;
 }
 .module.module-narrow.module-shallow {
   background: var(--epi-white);
