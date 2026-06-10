@@ -547,7 +547,7 @@ body.epi-home .main { padding-top: 0 !important; padding-bottom: 0 !important; }
   font-weight: 600;
 }
 
-.epi-ds-tab-content { padding: 1.25rem 1.75rem; }
+.epi-ds-tab-content { padding: 1.25rem 1.75rem 1.75rem; }
 
 /* Remove the "Data and Resources" heading inside the tab — redundant */
 .epi-ds-tab-content .module-heading { display: none; }
