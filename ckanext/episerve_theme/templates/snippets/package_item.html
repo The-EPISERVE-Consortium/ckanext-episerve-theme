@@ -46,24 +46,16 @@ hide_resources - If true hides the format badges.
     {% endblock %}
 
     <div class="dataset-card-meta">
-      {% block resources %}
-      {% if package.resources and not hide_resources %}
-        {% for fmt in h.dict_list_reduce(package.resources, 'format') %}
-          <span class="badge badge-format" data-format="{{ fmt.lower() }}">{{ fmt or '?' }}</span>
-        {% endfor %}
+      {% if package.metadata_created %}
+        <span class="badge badge-date">
+          <i class="fa fa-calendar-o me-1" aria-hidden="true"></i>
+          {{ _('Created') }} {{ h.render_datetime(package.metadata_created, date_format='%b %d, %Y') }}
+        </span>
       {% endif %}
-      {% endblock %}
-
-      {% if package.organization %}
-        <span class="badge badge-org">{{ package.organization.title or package.organization.name }}</span>
-      {% endif %}
-
-      <span class="dataset-card-spacer"></span>
-
       {% if package.metadata_modified %}
         <span class="badge badge-date">
-          <i class="fa fa-clock-o me-1" aria-hidden="true"></i>
-          {{ h.render_datetime(package.metadata_modified, date_format='%Y-%m-%d') }}
+          <i class="fa fa-refresh me-1" aria-hidden="true"></i>
+          {{ _('Updated') }} {{ h.render_datetime(package.metadata_modified, date_format='%b %d, %Y') }}
         </span>
       {% endif %}
     </div>
