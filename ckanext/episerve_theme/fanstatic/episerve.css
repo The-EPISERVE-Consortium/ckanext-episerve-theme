@@ -555,3 +555,21 @@ body.epi-home .main { padding-top: 0 !important; padding-bottom: 0 !important; }
 /* Additional Info table — restore cell padding stripped by table-condensed */
 .additional-info table th,
 .additional-info table td { padding: 0.5rem 0.75rem !important; }
+
+/* Remove CKAN core's triangle arrow on active facet items */
+.epi-facet-group .nav-item.active > a::before {
+  display: none !important;
+  content: none !important;
+}
+/* Replace CKAN's #647A82 active background with a soft teal tint */
+.epi-facet-group .nav-item.active > a,
+.epi-facet-group .nav-item.active > a:hover {
+  background-color: rgba(8, 145, 178, 0.1) !important;
+  color: var(--epi-navy) !important;
+}
+
+/* Breathing room between the inner white container and the column edges */
+.filters > div,
+#facet-sidebar > div {
+  margin: 0.5rem 0 !important;
+}
