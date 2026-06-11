@@ -1,6 +1,6 @@
 {% ckan_extends %}
 
-{% block subtitle %}{{ _('Epidemic Simulation & Data Service Platform') }}{% endblock %}
+{% block subtitle %}{{ _('EPISERVE — Data & Model Hub') }}{% endblock %}
 
 {% block bodytag %}{{ super() }} class="epi-home"{% endblock %}
 
@@ -13,10 +13,10 @@
   {{ self.flash() }}
   <div class="epi-hero-upper">
     <h1 class="epi-hero-heading">
-      Epidemic Simulation &amp;<br>
-      <span class="epi-hero-heading-accent">Data Service Platform</span>
+      EPISERVE<br>
+      <span class="epi-hero-heading-accent">Data &amp; Model Hub</span>
     </h1>
-    <p class="epi-hero-sub">{{ _('Open simulation platform for infectious disease modelling') }}<br>{{ _('and pandemic preparedness in Germany.') }}</p>
+    <p class="epi-hero-sub">{{ _('Access epidemiological datasets, simulation models, and model run results') }}<br>{{ _('for infectious disease research and pandemic preparedness in Germany.') }}</p>
     <form class="epi-hero-form" action="{{ h.url_for('dataset.search') }}" method="get">
       <div class="epi-hero-search">
         <input type="text" name="q" class="epi-hero-input" placeholder="{{ _('Explore datasets...') }}" autocomplete="off" aria-label="{{ _('Search datasets') }}">
