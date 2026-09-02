@@ -1,0 +1,15 @@
+{% ckan_extends %}
+
+{# 'attribution' is surfaced on the dedicated 'License Information' tab (see
+   package/read.html), so drop it from the generic extras table here. #}
+{% block extras scoped %}
+  {% for extra in h.sorted_extras(pkg_dict.extras) %}
+    {% set key, value = extra %}
+    {% if key != 'attribution' %}
+    <tr rel="dc:relation" resource="_:extra{{ i }}">
+      <th scope="row" class="dataset-label" property="rdfs:label">{{ _(key|e) }}</th>
+      <td class="dataset-details" property="rdf:value">{{ value }}</td>
+    </tr>
+    {% endif %}
+  {% endfor %}
+{% endblock %}
