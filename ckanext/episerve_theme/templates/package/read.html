@@ -81,34 +81,28 @@ for resource in dataset["resources"]:
         </div>
       </div>
       <div class="epi-pane" id="tab-license" style="display:none">
-        <section class="additional-info">
-          <table class="table table-striped table-bordered table-condensed">
-            <tbody>
-              <tr>
-                <th scope="row" class="dataset-label">{{ _('License') }}</th>
-                <td class="dataset-details" property="dc:rights">
-                  {% if pkg.license_id and pkg.license_id != 'notspecified' %}
-                    {% if pkg.license_url %}
-                      <a href="{{ pkg.license_url }}" rel="dc:rights" target="_blank">{{ pkg.license_title or pkg.license_id }}</a>
-                    {% else %}
-                      {{ pkg.license_title or pkg.license_id }}
-                    {% endif %}
-                  {% else %}
-                    {{ _('Not specified') }}
-                  {% endif %}
-                </td>
-              </tr>
-              {% for extra in pkg.extras %}
-                {% if extra.key == 'attribution' %}
-                <tr>
-                  <th scope="row" class="dataset-label">{{ _('Attribution') }}</th>
-                  <td class="dataset-details">{{ extra.value }}</td>
-                </tr>
-                {% endif %}
-              {% endfor %}
-            </tbody>
-          </table>
-        </section>
+        <div class="epi-license-section">
+          <h3 class="epi-license-h">{{ _('License') }}</h3>
+          <p class="epi-license-p" property="dc:rights">
+            {% if pkg.license_id and pkg.license_id != 'notspecified' %}
+              {% if pkg.license_url %}
+                <a href="{{ pkg.license_url }}" rel="dc:rights" target="_blank">{{ pkg.license_title or pkg.license_id }}</a>
+              {% else %}
+                {{ pkg.license_title or pkg.license_id }}
+              {% endif %}
+            {% else %}
+              {{ _('Not specified') }}
+            {% endif %}
+          </p>
+        </div>
+        {% for extra in pkg.extras %}
+          {% if extra.key == 'attribution' %}
+          <div class="epi-license-section">
+            <h3 class="epi-license-h">{{ _('Attribution') }}</h3>
+            <p class="epi-license-p">{{ extra.value }}</p>
+          </div>
+          {% endif %}
+        {% endfor %}
       </div>
     </div>
   </div>

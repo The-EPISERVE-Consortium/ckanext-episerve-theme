@@ -690,6 +690,24 @@ body.epi-home .main { padding-top: 0 !important; padding-bottom: 0 !important; }
 }
 .epi-code-pre code { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; }
 
+/* License Information tab */
+.epi-license-section { margin-bottom: 1.5rem; }
+.epi-license-section:last-child { margin-bottom: 0; }
+.epi-license-h {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--epi-muted);
+  margin: 0 0 0.35rem;
+}
+.epi-license-p {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--epi-text);
+  margin: 0;
+}
+
 /* Remove CKAN core's triangle arrow on active facet items */
 .epi-facet-group .nav-item.active > a::before {
   display: none !important;
