@@ -1,7 +1,30 @@
+import os
+import urllib.request
+
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from flask import Blueprint, Response
-import urllib.request
+
+from ckanext.episerve_theme import signing
+
+
+def episerve_signed_url(url):
+    """Template helper: sign a DOIP component URL for the current visitor.
+
+    Only logged-in users get a signed link (valid for ``DOIP_LINK_TTL`` seconds,
+    default one hour); anonymous visitors, non-DOIP URLs, and deployments without
+    ``DOIP_LINK_SECRET`` get the URL unchanged. The DOIP server accepts the link for
+    restricted datasets only, for exactly that component.
+    """
+    if not toolkit.current_user.is_authenticated:
+        return url
+    doip_public_url = os.environ.get("DOIP_PUBLIC_URL", "https://doip.episerve.zib.de").rstrip("/")
+    return signing.sign_doip_url(
+        url,
+        retrieve_base=f"{doip_public_url}/doip/retrieve/",
+        secret=os.environ.get("DOIP_LINK_SECRET", ""),
+        ttl=int(os.environ.get("DOIP_LINK_TTL", "3600")),
+    )
 
 
 def metabase_proxy(card_id):
@@ -17,6 +40,10 @@ def metabase_proxy(card_id):
 class EPIServeThemePlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IBlueprint)
+    plugins.implements(plugins.ITemplateHelpers)
+
+    def get_helpers(self):
+        return {"episerve_signed_url": episerve_signed_url}
 
     def update_config(self, config):
         toolkit.add_template_directory(config, "templates")

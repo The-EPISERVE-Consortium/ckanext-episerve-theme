@@ -1,0 +1,38 @@
+{% ckan_extends %}
+
+{# Download button and URL line use a signed link for logged-in users (restricted DOIP files). #}
+{% block resource_actions_inner %}
+  {% block action_manage %}
+    {% if h.check_access('package_update', {'id':pkg.id }) %}
+      <li>{% link_for _('Edit resource'), named_route=pkg.type ~ '_resource.edit', id=pkg.name, resource_id=res.id, class_='btn btn-default', icon='pencil' %}</li>
+      {% block action_manage_inner %}{% endblock %}
+      <li>{% link_for _('Views'), named_route=pkg.type ~ '_resource.views', id=pkg.name, resource_id=res.id, class_='btn btn-default', icon='chart-bar' %}</li>
+    {% endif %}
+  {% endblock action_manage %}
+  {% if res.url and h.is_url(res.url) %}
+    <li>
+      <div class="btn-group">
+      <a class="btn btn-primary resource-url-analytics" href="{{ h.episerve_signed_url(res.url) }}">
+        {% if res.resource_type in ('listing', 'service') %}
+          <i class="fa fa-eye"></i> {{ _('View') }}
+        {% elif  res.resource_type == 'api' %}
+          <i class="fa fa-key"></i> {{ _('API Endpoint') }}
+        {% elif not res.has_views and not res.url_type == 'upload' %}
+          <i class="fa fa-external-link"></i> {{ _('Go to resource') }}
+        {% else %}
+          <i class="fa fa-arrow-circle-down"></i> {{ _('Download') }}
+        {% endif %}
+      </a>
+      {% block download_resource_button %}{% endblock download_resource_button %}
+      </div>
+    </li>
+  {% endif %}
+{% endblock %}
+
+{% block resource_read_url %}
+  {% if res.url and h.is_url(res.url) %}
+    <p class="text-muted ellipsis">{{ _('URL:') }} <a class="resource-url-analytics" href="{{ h.episerve_signed_url(res.url) }}" title="{{ res.url }}">{{ res.url }}</a></p>
+  {% elif res.url %}
+    <p class="text-muted break-word">{{ _('URL:') }} {{ res.url }}</p>
+  {% endif %}
+{% endblock %}

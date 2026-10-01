@@ -1,0 +1,7 @@
+{% ckan_extends %}
+
+{# Logged-in users get a signed, expiring link so restricted DOIP files can be previewed. #}
+{% block page %}
+    <div id="hyparquet-root" data-url="{{ h.episerve_signed_url(resource_view.file_url or resource.url) }}">
+    </div>
+{% endblock %}
