@@ -26,7 +26,7 @@
       {% endif %}
     </h1>
     {% if pkg.notes %}
-    <p class="epi-ds-desc">{{ h.get_translated(pkg, 'notes') }}</p>
+    <div class="epi-ds-desc">{{ h.render_markdown(h.get_translated(pkg, 'notes')) }}</div>
     {% endif %}
   </div>
 

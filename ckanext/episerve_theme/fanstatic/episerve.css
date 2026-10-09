@@ -619,6 +619,26 @@ body.epi-home .main { padding-top: 0 !important; padding-bottom: 0 !important; }
   line-height: 1.6;
 }
 
+/* The description is rendered markdown: paragraphs and lists need spacing. */
+.epi-ds-desc p,
+.epi-ds-desc ul,
+.epi-ds-desc ol {
+  margin: 0 0 0.6rem;
+}
+
+.epi-ds-desc > :last-child {
+  margin-bottom: 0;
+}
+
+.epi-ds-desc ul,
+.epi-ds-desc ol {
+  padding-left: 1.4rem;
+}
+
+.epi-ds-desc code {
+  font-size: 0.85em;
+}
+
 .epi-ds-body {
   background: #fff;
   border: 1px solid var(--epi-border);
