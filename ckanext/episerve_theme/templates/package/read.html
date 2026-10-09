@@ -85,13 +85,31 @@ for resource in dataset["resources"]:
     print(resource["name"], resource["url"])</code></pre>
         </div>
 
+        {% for res in pkg.resources %}
+        {% set ext = (res.name.rsplit('.', 1)[-1] | lower) if '.' in res.name else '' %}
+        {% if res.name != 'fdo.json' %}
         <div class="epi-code-block">
-          <div class="epi-code-label">curl</div>
-          <pre class="epi-code-pre"><code># Downloads only the first 1 MiB (1048576 bytes) of each data file.
+          {% if ext == 'parquet' %}
+          <div class="epi-code-label">{{ res.name }} &ndash; Python (DuckDB)</div>
+          <pre class="epi-code-pre"><code># pip install duckdb
+# Reads only the first 100 rows with range requests; the file is not downloaded completely.
+# Name the columns you need instead of * to read even less data.
+import duckdb
+
+url = "{{ res.url }}"
+print(duckdb.sql(f"SELECT * FROM read_parquet('{url}') LIMIT 100").df())</code></pre>
+          {% elif ext in ['csv', 'tsv', 'txt', 'json', 'jsonl', 'ndjson'] %}
+          <div class="epi-code-label">{{ res.name }} &ndash; curl</div>
+          <pre class="epi-code-pre"><code># Downloads only the first 1 MiB (1048576 bytes) of the file.
 # Remove "?size=1048576" from the URL to download the complete file.
-{% for res in pkg.resources %}{% if res.name != 'fdo.json' %}curl -O "{{ res.url }}?size=1048576"
-{% endif %}{% endfor %}</code></pre>
+curl -O "{{ res.url }}?size=1048576"</code></pre>
+          {% else %}
+          <div class="epi-code-label">{{ res.name }} &ndash; curl</div>
+          <pre class="epi-code-pre"><code>curl -O "{{ res.url }}"</code></pre>
+          {% endif %}
         </div>
+        {% endif %}
+        {% endfor %}
       </div>
       {% endif %}
       <div class="epi-pane" id="tab-license" style="display:none">
