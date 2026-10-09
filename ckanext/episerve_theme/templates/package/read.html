@@ -68,6 +68,7 @@
       {% if not hide_files %}
       <div class="epi-pane" id="tab-api" style="display:none">
         <p class="epi-api-intro">{{ _('You can access all data via a web API using e.g. Python or curl.') }}</p>
+        <p class="epi-api-intro">{{ _('The following examples show how to read details with python and to download the data with curl.') }}</p>
 
         <div class="epi-code-block">
           <div class="epi-code-label">Python</div>
@@ -86,7 +87,10 @@ for resource in dataset["resources"]:
 
         <div class="epi-code-block">
           <div class="epi-code-label">curl</div>
-          <pre class="epi-code-pre"><code>curl "https://data.episerve.zib.de/api/3/action/package_show?id={{ pkg.name }}"</code></pre>
+          <pre class="epi-code-pre"><code># Downloads only the first 1 MiB (1048576 bytes) of each data file.
+# Remove "?size=1048576" from the URL to download the complete file.
+{% for res in pkg.resources %}{% if res.name != 'fdo.json' %}curl -O "{{ res.url }}?size=1048576"
+{% endif %}{% endfor %}</code></pre>
         </div>
       </div>
       {% endif %}
