@@ -80,7 +80,7 @@ Model card tab of a model entry. `card` is h.episerve_model_card(pkg.extras)
       {% for c in f.columns %}
         <tr>
           <td class="epi-card-nowrap"><code>{{ c.where }}</code></td>
-          <td>{% if c.role_label %}{{ c.role_label }} <span class="epi-card-code">{{ c.role }}</span>{% else %}{{ c.role }}{% endif %}</td>
+          <td>{{ c.role_label or c.role }}</td>
           <td>{{ c.type }}</td>
           <td>{{ c.description }}{% if c.notes %} <span class="epi-card-hint">({{ c.notes }})</span>{% endif %}</td>
         </tr>

@@ -85,7 +85,7 @@ def parameter_rows(parameters) -> list[dict]:
     return rows
 
 
-# Plain words for the column roles of spec model-card v1; the code stays visible next to them.
+# Plain words for the column roles of spec model-card v1; a role without one is shown as its code.
 INPUT_ROLES = {
     "time": "Time axis",
     "target": "Series to forecast",
