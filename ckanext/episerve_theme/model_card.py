@@ -5,6 +5,8 @@ The sync flow (workflow-prefect__sync-lakefs-ckan) stores each section of a mode
 model_inputs, model_outputs, model_resources, model_documentation, plus model_card_valid
 and model_card_validation. Nothing here imports CKAN, so it can be tested on its own.
 Every function tolerates a missing or malformed section: the tab shows what is there.
+The task section is not shown: for readers it repeats the other sections, and it is
+meant for programs (e.g. parameterRoles).
 """
 
 import json
@@ -183,8 +185,6 @@ def file_rows(files, output: bool = False) -> list[dict]:
     return rows
 
 
-_TASK_LABELS = {"type": "Task", "frequency": "Frequency", "probabilistic": "Probabilistic (quantiles)",
-                "covariates": "Uses further input columns", "maxHorizon": "Longest forecast (steps)"}
 _RESOURCE_LABELS = {"cpu": "CPU", "memory": "Memory", "gpu": "GPUs", "network": "Needs internet",
                     "typicalRuntimeSeconds": "Typical runtime (s)"}
 _DOC_LABELS = {"method": "Method", "intendedUse": "Intended use", "limitations": "Limitations",
@@ -212,8 +212,6 @@ def model_card(extras) -> dict | None:
     issues = [i for i in validation.get("issues") or [] if isinstance(i, dict)]
     valid = {"true": True, "false": False}.get(str(extras.get("model_card_valid", "")).lower())
     parameters = sections["parameters"] if isinstance(sections["parameters"], dict) else {}
-    task = sections["task"] if isinstance(sections["task"], dict) else {}
-    roles = task.get("parameterRoles") if isinstance(task.get("parameterRoles"), dict) else {}
     documentation = sections["documentation"] if isinstance(sections["documentation"], dict) else {}
     refs = documentation.get("references")
     return {
@@ -223,10 +221,8 @@ def model_card(extras) -> dict | None:
         "parameters": parameter_rows(parameters),
         "unknown_keys_rejected": parameters.get("additionalProperties") is False,
         "rules": [r for r in parameters.get("rules") or [] if isinstance(r, str)],
-        "parameter_roles": [(role, name) for role, name in roles.items()],
         "inputs": file_rows(sections["inputs"]),
         "outputs": file_rows(sections["outputs"], output=True),
-        "task": _pairs(task, _TASK_LABELS),
         "resources": _pairs(sections["resources"], _RESOURCE_LABELS),
         "documentation": _pairs(documentation, _DOC_LABELS),
         "references": [r for r in (refs if isinstance(refs, list) else []) if isinstance(r, str)],

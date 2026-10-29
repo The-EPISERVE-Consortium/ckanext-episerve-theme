@@ -94,19 +94,13 @@ Model card tab of a model entry. `card` is h.episerve_model_card(pkg.extras)
   {% endif %}
   {% endfor %}
 
-  {% for title, pairs in [(_('Task'), card.task), (_('Resources'), card.resources)] %}
-  {% if pairs %}
-  <h3 class="epi-license-h">{{ title }}</h3>
+  {% if card.resources %}
+  <h3 class="epi-license-h">{{ _('Resources') }}</h3>
   <dl class="epi-card-dl">
-    {% for label, value in pairs %}
+    {% for label, value in card.resources %}
     <dt>{{ _(label) }}</dt><dd>{{ value }}</dd>
     {% endfor %}
-    {% if title == _('Task') and card.parameter_roles %}
-    <dt>{{ _('Parameter roles') }}</dt>
-    <dd>{% for role, name in card.parameter_roles %}{{ role }}: <code>{{ name }}</code>{% if not loop.last %}, {% endif %}{% endfor %}</dd>
-    {% endif %}
   </dl>
   {% endif %}
-  {% endfor %}
 
 </div>

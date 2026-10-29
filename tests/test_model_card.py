@@ -94,23 +94,22 @@ def test_percentile_labels_and_unknown_roles():
     assert cols[1]["role_label"] == "" and cols[1]["role"] == "new-role"
 
 
-def test_task_resources_documentation():
+def test_resources_documentation_and_no_task():
     card = mc.model_card(_extras(
         task={"type": "forecast", "probabilistic": True, "maxHorizon": 512, "parameterRoles": {"horizon": "prediction_length"}},
         resources={"gpu": 0, "network": True},
         documentation={"method": "zero-shot", "references": ["https://example.org", "a paper"]},
     ))
-    assert ("Task", "forecast") in card["task"] and ("Probabilistic (quantiles)", "yes") in card["task"]
-    assert card["parameter_roles"] == [("horizon", "prediction_length")]
+    assert "task" not in card and "parameter_roles" not in card
     assert ("Needs internet", "yes") in card["resources"] and ("GPUs", "0") in card["resources"]
     assert card["documentation"] == [("Method", "zero-shot")]
     assert card["references"] == ["https://example.org", "a paper"]
 
 
 def test_malformed_sections_do_not_break_the_tab():
-    card = mc.model_card(_extras(parameters="{not json", inputs={"file": "x"}, task=[1], card_valid="maybe",
+    card = mc.model_card(_extras(parameters="{not json", inputs={"file": "x"}, resources=[1], card_valid="maybe",
                                  card_validation="null"))
-    assert card["parameters"] == [] and card["inputs"] == [] and card["task"] == []
+    assert card["parameters"] == [] and card["inputs"] == [] and card["resources"] == []
     assert card["valid"] is None and card["errors"] == []
 
 
