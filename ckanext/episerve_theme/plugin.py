@@ -5,7 +5,7 @@ import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from flask import Blueprint, Response
 
-from ckanext.episerve_theme import signing
+from ckanext.episerve_theme import model_card, signing
 
 
 def episerve_signed_url(url):
@@ -43,7 +43,11 @@ class EPIServeThemePlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.ITemplateHelpers)
 
     def get_helpers(self):
-        return {"episerve_signed_url": episerve_signed_url}
+        return {
+            "episerve_signed_url": episerve_signed_url,
+            "episerve_model_card": model_card.model_card,
+            "episerve_is_card_extra": lambda key: key in model_card.CARD_EXTRAS,
+        }
 
     def update_config(self, config):
         toolkit.add_template_directory(config, "templates")

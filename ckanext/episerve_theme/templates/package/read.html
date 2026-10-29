@@ -7,6 +7,9 @@
 {% block primary %}
 {# Datasets with extras.access == 'restricted' hide the Resources and API Access tabs from anonymous users. #}
 {% set hide_files = h.get_pkg_dict_extra(pkg, 'access') == 'restricted' and not current_user.is_authenticated %}
+{# Model entries get a "Model card" tab (opened first) from the card extras the sync flow writes. #}
+{% set card = h.episerve_model_card(pkg.extras) %}
+{% set first_tab = 'card' if card else ('resources' if not hide_files else 'info') %}
 <div class="primary col-12" role="main">
 
   {% if h.check_access('package_update', {'id': pkg.id }) %}
@@ -33,14 +36,20 @@
   {# Lower card: tabbed resources + additional info #}
   <div class="epi-ds-body">
     <ul class="nav epi-ds-tabs" role="tablist">
-      {% if not hide_files %}
+      {% if card %}
       <li class="nav-item" role="presentation">
         <button class="epi-ds-tab active" type="button"
+                onclick="epiTab(this,'tab-card')">{{ _('Model card') }}</button>
+      </li>
+      {% endif %}
+      {% if not hide_files %}
+      <li class="nav-item" role="presentation">
+        <button class="epi-ds-tab{% if first_tab == 'resources' %} active{% endif %}" type="button"
                 onclick="epiTab(this,'tab-resources')">{{ _('Resources') }}</button>
       </li>
       {% endif %}
       <li class="nav-item" role="presentation">
-        <button class="epi-ds-tab{% if hide_files %} active{% endif %}" type="button"
+        <button class="epi-ds-tab{% if first_tab == 'info' %} active{% endif %}" type="button"
                 onclick="epiTab(this,'tab-info')">{{ _('Additional Info') }}</button>
       </li>
       {% if not hide_files %}
@@ -55,14 +64,19 @@
       </li>
     </ul>
     <div class="epi-ds-tab-content">
+      {% if card %}
+      <div class="epi-pane" id="tab-card">
+        {% snippet "package/snippets/model_card.html", card=card %}
+      </div>
+      {% endif %}
       {% if not hide_files %}
-      <div class="epi-pane" id="tab-resources">
+      <div class="epi-pane" id="tab-resources"{% if first_tab != 'resources' %} style="display:none"{% endif %}>
         {% snippet "package/snippets/resources_list.html", pkg=pkg, resources=pkg.resources,
            can_edit=h.check_access('package_update', {'id': pkg.id}) %}
         {% snippet "package/snippets/tags.html", tags=pkg.tags %}
       </div>
       {% endif %}
-      <div class="epi-pane" id="tab-info"{% if not hide_files %} style="display:none"{% endif %}>
+      <div class="epi-pane" id="tab-info"{% if first_tab != 'info' %} style="display:none"{% endif %}>
         {% snippet "package/snippets/additional_info.html", pkg_dict=pkg %}
       </div>
       {% if not hide_files %}

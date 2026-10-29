@@ -728,6 +728,49 @@ body.epi-home .main { padding-top: 0 !important; padding-bottom: 0 !important; }
   margin: 0;
 }
 
+/* Model card tab (package/snippets/model_card.html) */
+.epi-card .epi-license-h { margin-top: 1.5rem; }
+.epi-card-status { margin-bottom: 0.5rem; }
+.epi-card-badge {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.2rem 0.7rem;
+  border-radius: 1rem;
+  background: #f1f5f9;
+  color: var(--epi-muted);
+}
+.epi-card-badge-ok  { background: #e6f4ea; color: #1e7a3c; }
+.epi-card-badge-bad { background: #fdecea; color: #b42318; }
+.epi-card-issues { list-style: none; padding: 0; margin: 0.5rem 0 0; font-size: 0.85rem; }
+.epi-card-issues li { margin: 0.15rem 0; }
+.epi-card-issue-error   { color: #b42318; }
+.epi-card-issue-warning { color: #8a6100; }
+.epi-card-scroll { overflow-x: auto; }
+.epi-card-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.epi-card-table th,
+.epi-card-table td { text-align: left; vertical-align: top; padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--epi-border); }
+.epi-card-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--epi-muted); }
+.epi-card-nowrap { white-space: nowrap; }
+.epi-card-req {
+  font-size: 0.68rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 0.6rem;
+  background: rgba(8, 145, 178, 0.1);
+  color: var(--epi-cyan-dark);
+}
+.epi-card-hint { color: var(--epi-muted); font-size: 0.82rem; }
+.epi-card-notes { font-size: 0.85rem; color: var(--epi-muted); margin: 0.5rem 0 0; padding-left: 1.1rem; }
+.epi-card-file { margin-bottom: 1rem; }
+.epi-card-file .epi-license-p { margin-bottom: 0.35rem; }
+.epi-card-dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.3rem 1rem; font-size: 0.875rem; margin: 0; }
+.epi-card-dl dt { color: var(--epi-muted); font-weight: 600; }
+.epi-card-dl dd { margin: 0; }
+@media (max-width: 600px) {
+  .epi-card-dl { grid-template-columns: 1fr; }
+  .epi-card-dl dd { margin-bottom: 0.4rem; }
+}
+
 /* Remove CKAN core's triangle arrow on active facet items */
 .epi-facet-group .nav-item.active > a::before {
   display: none !important;

@@ -1,0 +1,103 @@
+{#
+Model card tab of a model entry. `card` is h.episerve_model_card(pkg.extras)
+(ckanext/episerve_theme/model_card.py); every section is optional.
+#}
+<div class="epi-card">
+
+  <div class="epi-card-status">
+    {% if card.valid is sameas true %}
+      <span class="epi-card-badge epi-card-badge-ok"><i class="fa fa-check"></i> {{ _('Model card valid') }}</span>
+    {% elif card.valid is sameas false %}
+      <span class="epi-card-badge epi-card-badge-bad"><i class="fa fa-times"></i> {{ _('Model card invalid') }}</span>
+    {% else %}
+      <span class="epi-card-badge">{{ _('Model card not checked') }}</span>
+    {% endif %}
+    {% if card.errors or card.warnings %}
+    <ul class="epi-card-issues">
+      {% for i in card.errors %}
+      <li class="epi-card-issue-error"><b>{{ _('Error') }}</b>{% if i.path %} <code>{{ i.path }}</code>{% endif %}: {{ i.message }}</li>
+      {% endfor %}
+      {% for i in card.warnings %}
+      <li class="epi-card-issue-warning"><b>{{ _('Warning') }}</b>{% if i.path %} <code>{{ i.path }}</code>{% endif %}: {{ i.message }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+
+  <h3 class="epi-license-h">{{ _('Parameters') }} <span class="epi-card-hint">({{ _('keys of config.json') }})</span></h3>
+  {% if card.parameters %}
+  <div class="epi-card-scroll">
+  <table class="epi-card-table">
+    <thead><tr><th>{{ _('Name') }}</th><th>{{ _('Type') }}</th><th>{{ _('Default') }}</th><th>{{ _('Range') }}</th><th>{{ _('Description') }}</th></tr></thead>
+    <tbody>
+    {% for p in card.parameters %}
+      <tr>
+        <td class="epi-card-nowrap"><code>{{ p.name }}</code>{% if p.required %} <span class="epi-card-req">{{ _('required') }}</span>{% endif %}</td>
+        <td>{{ p.type }}</td>
+        <td>{% if p.default %}<code>{{ p.default }}</code>{% else %}&ndash;{% endif %}</td>
+        <td>{{ p.range or '–' }}</td>
+        <td>{{ p.description }}{% if p.examples %} <span class="epi-card-hint">{{ _('Examples') }}: <code>{{ p.examples }}</code></span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="epi-license-p">{{ _('The model card declares no parameters.') }}</p>
+  {% endif %}
+  {% if card.unknown_keys_rejected or card.rules %}
+  <ul class="epi-card-notes">
+    {% if card.unknown_keys_rejected %}<li>{{ _('Keys not listed here are rejected.') }}</li>{% endif %}
+    {% for r in card.rules %}<li>{{ r }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+
+  {% for title, files in [(_('Input'), card.inputs), (_('Output'), card.outputs)] %}
+  {% if files %}
+  <h3 class="epi-license-h">{{ title }}</h3>
+  {% for f in files %}
+  <div class="epi-card-file">
+    <p class="epi-license-p"><code>{{ f.file }}</code>{% if f.format %} <span class="epi-card-hint">{{ f.format }}</span>{% endif %}{% if f.notes %} <span class="epi-card-hint">&middot; {{ f.notes }}</span>{% endif %}</p>
+    {% if f.description %}<p class="epi-license-p">{{ f.description }}</p>{% endif %}
+    {% if f.columns %}
+    <div class="epi-card-scroll">
+    <table class="epi-card-table">
+      <thead><tr><th>{{ _('Column') }}</th><th>{{ _('Role') }}</th><th>{{ _('Type') }}</th><th>{{ _('Description') }}</th></tr></thead>
+      <tbody>
+      {% for c in f.columns %}
+        <tr>
+          <td class="epi-card-nowrap"><code>{{ c.where }}</code></td>
+          <td>{{ c.role }}</td>
+          <td>{{ c.type }}</td>
+          <td>{{ c.description }}{% if c.notes %} <span class="epi-card-hint">({{ c.notes }})</span>{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
+
+  {% for title, pairs in [(_('Task'), card.task), (_('Resources'), card.resources), (_('Documentation'), card.documentation)] %}
+  {% if pairs or (title == _('Documentation') and card.references) %}
+  <h3 class="epi-license-h">{{ title }}</h3>
+  <dl class="epi-card-dl">
+    {% for label, value in pairs %}
+    <dt>{{ _(label) }}</dt><dd>{{ value }}</dd>
+    {% endfor %}
+    {% if title == _('Task') and card.parameter_roles %}
+    <dt>{{ _('Parameter roles') }}</dt>
+    <dd>{% for role, name in card.parameter_roles %}{{ role }}: <code>{{ name }}</code>{% if not loop.last %}, {% endif %}{% endfor %}</dd>
+    {% endif %}
+    {% if title == _('Documentation') and card.references %}
+    <dt>{{ _('References') }}</dt>
+    <dd>{% for r in card.references %}{% if r.startswith('http://') or r.startswith('https://') %}<a href="{{ r }}" target="_blank" rel="noopener">{{ r }}</a>{% else %}{{ r }}{% endif %}{% if not loop.last %}<br>{% endif %}{% endfor %}</dd>
+    {% endif %}
+  </dl>
+  {% endif %}
+  {% endfor %}
+
+</div>
