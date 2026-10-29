@@ -85,6 +85,43 @@ def parameter_rows(parameters) -> list[dict]:
     return rows
 
 
+# Plain words for the column roles of spec model-card v1; the code stays visible next to them.
+INPUT_ROLES = {
+    "time": "Time axis",
+    "target": "Series to forecast",
+    "group": "Splits the data into separate series",
+    "covariate": "Extra predictor",
+    "filter": "Selects the rows used",
+    "other": "Other",
+}
+OUTPUT_ROLES = {
+    "time": "Time of the forecast step",
+    "group": "Series the row belongs to",
+    "mean": "Mean forecast",
+    "median": "Median forecast",
+    "point": "Point forecast",
+    "quantile": "Quantile of the forecast",
+    "sample": "One simulated outcome",
+    "other": "Other",
+}
+
+
+def _ordinal(number) -> str:
+    """10 -> "10th", 2.5 -> "2.5th", 1 -> "1st"."""
+    if isinstance(number, float) and number.is_integer():
+        number = int(number)
+    if isinstance(number, int) and number % 100 not in (11, 12, 13):
+        return f"{number}{ {1: 'st', 2: 'nd', 3: 'rd'}.get(number % 10, 'th') }"
+    return f"{number}th"
+
+
+def _percentile(level) -> str:
+    """0.1 -> "10th percentile"."""
+    if not isinstance(level, (int, float)) or isinstance(level, bool):
+        return ""
+    return f"{_ordinal(round(level * 100, 6))} percentile"
+
+
 def _input_column(col: dict) -> dict:
     notes = []
     if col.get("nullable"):
@@ -98,6 +135,7 @@ def _input_column(col: dict) -> dict:
     return {
         "where": col["name"] if col.get("name") else (f"column {col['position'] + 1}" if isinstance(col.get("position"), int) else ""),
         "role": col.get("role", ""),
+        "role_label": INPUT_ROLES.get(col.get("role"), ""),
         "type": _text(col.get("type")),
         "notes": "; ".join(notes),
         "description": col.get("description", ""),
@@ -112,9 +150,11 @@ def _output_column(col: dict) -> dict:
     else:
         name = ""
     role = col.get("role", "")
-    if role == "quantile" and "level" in col:
+    label = OUTPUT_ROLES.get(role, "")
+    if role == "quantile" and _percentile(col.get("level")):
+        label = _percentile(col.get("level"))
         role = f"quantile {_text(col['level'])}"
-    return {"where": name, "role": role, "type": _text(col.get("type")),
+    return {"where": name, "role": role, "role_label": label, "type": _text(col.get("type")),
             "notes": "optional" if col.get("required") is False else "", "description": col.get("description", "")}
 
 

@@ -760,6 +760,12 @@ body.epi-home .main { padding-top: 0 !important; padding-bottom: 0 !important; }
   color: var(--epi-cyan-dark);
 }
 .epi-card-hint { color: var(--epi-muted); font-size: 0.82rem; }
+.epi-card-code {
+  color: var(--epi-muted);
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
 .epi-card-notes { font-size: 0.85rem; color: var(--epi-muted); margin: 0.5rem 0 0; padding-left: 1.1rem; }
 .epi-card-file { margin-bottom: 1rem; }
 .epi-card-file .epi-license-p { margin-bottom: 0.35rem; }

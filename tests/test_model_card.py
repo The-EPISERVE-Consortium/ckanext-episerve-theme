@@ -76,9 +76,22 @@ def test_inputs_and_outputs():
     assert f["columns"][0]["type"] == "date, datetime"
     assert f["columns"][1]["notes"] == "gaps allowed; optional"
     assert f["columns"][2]["notes"] == 'must contain "Bundesweit"'
+    assert [c["role_label"] for c in f["columns"]] == ["Time axis", "Extra predictor", "Selects the rows used"]
     out = card["outputs"][0]["columns"]
     assert out[0]["where"] == "<target column>_q10" and out[0]["role"] == "quantile 0.1"
-    assert out[1]["where"] == "date"
+    assert out[0]["role_label"] == "10th percentile"
+    assert out[1]["where"] == "date" and out[1]["role_label"] == "Time of the forecast step"
+
+
+def test_percentile_labels_and_unknown_roles():
+    assert [mc._percentile(x) for x in (0.1, 0.9, 0.025, 0.01, 0.5)] == [
+        "10th percentile", "90th percentile", "2.5th percentile", "1st percentile", "50th percentile"]
+    assert mc._percentile("x") == "" and mc._percentile(None) == ""
+    card = mc.model_card(_extras(outputs=[{"file": "p.tsv", "columns": [
+        {"name": "q", "role": "quantile"}, {"name": "z", "role": "new-role"}]}]))
+    cols = card["outputs"][0]["columns"]
+    assert cols[0]["role_label"] == "Quantile of the forecast" and cols[0]["role"] == "quantile"
+    assert cols[1]["role_label"] == "" and cols[1]["role"] == "new-role"
 
 
 def test_task_resources_documentation():
