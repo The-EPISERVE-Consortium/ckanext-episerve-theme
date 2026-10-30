@@ -58,7 +58,7 @@
   {% endif %}
   {% if pkg_dict.metadata_modified %}
     <tr>
-      <th scope="row" class="dataset-label" title="metadata_modified">{{ _("Catalog entry updated") }}</th>
+      <th scope="row" class="dataset-label" title="metadata_modified">{{ _("CKAN entry updated") }}</th>
       <td class="dataset-details">
         {% snippet 'snippets/local_friendly_datetime.html', datetime_obj=pkg_dict.metadata_modified %}
       </td>
