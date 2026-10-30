@@ -1,7 +1,18 @@
 {% ckan_extends %}
 
-{# Logged-in users get a signed, expiring link so restricted DOIP files can be previewed. #}
+{# Logged-in users get a signed, expiring link so restricted DOIP files can be previewed. The view runs in an
+   iframe of the resource page: a ?version=<commit> of that page previews the file at that version. #}
 {% block page %}
     <div id="hyparquet-root" data-url="{{ h.episerve_signed_url(resource_view.file_url or resource.url) }}">
     </div>
+    <script>
+    (function () {
+      var root = document.getElementById('hyparquet-root');
+      var version = null;
+      try { version = new URLSearchParams((window.parent || window).location.search).get('version'); } catch (e) {}
+      if (version && /^[0-9a-f]{64}$/.test(version) && root.dataset.url.indexOf('/doip/retrieve/') !== -1) {
+        root.dataset.url += (root.dataset.url.indexOf('?') === -1 ? '?' : '&') + 'version=' + version;
+      }
+    })();
+    </script>
 {% endblock %}

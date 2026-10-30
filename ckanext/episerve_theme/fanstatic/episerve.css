@@ -842,3 +842,8 @@ body.epi-home .main { padding-top: 0 !important; padding-bottom: 0 !important; }
   color: #1b5e20;
   text-decoration: none;
 }
+
+/* ── Dataset page at a version (?version=<commit>) ─────────── */
+.epi-version-banner { background: #e0f2fe; border: 1px solid #7dd3fc; border-radius: 0.5rem;
+                      padding: 0.5rem 0.75rem; margin-bottom: 0.75rem; font-size: 0.95rem; }
+.epi-version-missing { background: #fef3c7; border-color: #fcd34d; }

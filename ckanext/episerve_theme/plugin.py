@@ -8,7 +8,7 @@ import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from flask import Blueprint, Response
 
-from ckanext.episerve_theme import dates, lineage, model_card, signing
+from ckanext.episerve_theme import dates, lineage, model_card, signing, versions
 
 
 def episerve_signed_url(url):
@@ -44,34 +44,67 @@ def metabase_proxy(card_id):
 API_INTERNAL_URL = os.environ.get("EPISERVE_API_INTERNAL_URL", "http://episerve-api-server.default.svc.cluster.local")
 API_PUBLIC_URL = os.environ.get("EPISERVE_API_PUBLIC_URL", "https://api.episerve.zib.de")
 DOIP_NAMESPACE = os.environ.get("DOIP_PUBLIC_URL", "https://doip.episerve.zib.de").rstrip("/")
+# The DOIP server inside the cluster, for reading an entry's versions and its FDO at a version.
+DOIP_INTERNAL_URL = os.environ.get("DOIP_INTERNAL_URL", "http://doip-server.default.svc.cluster.local").rstrip("/")
+
+
+def _get_json(url, timeout=15):
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as r:
+            return json.loads(r.read())
+    except Exception:
+        return None
+
+
+def _fetch_versions(qid):
+    body = _get_json(f"{DOIP_INTERNAL_URL}/doip/versions/{qid}")
+    return body.get("versions") if isinstance(body, dict) else None
+
+
+def _fetch_fdo(qid, commit):
+    body = _get_json(f"{DOIP_INTERNAL_URL}/doip/retrieve/{qid}?{urllib.parse.urlencode({'version': commit})}")
+    # an FDO missing at that commit comes back as {"error": ...}
+    return body if isinstance(body, dict) and "kernel" in body and "error" not in body else None
+
+
+def episerve_request_version():
+    """Template helper: the ``?version=`` of this request when it is a full commit ID, else None."""
+    return versions.valid_commit(toolkit.request.args.get("version"))
+
+
+def episerve_version(pkg):
+    """Template helper: the version the dataset page shows (see versions.version_view); None without ``?version=``."""
+    if "version" not in toolkit.request.args:
+        return None
+    return versions.version_view(pkg, toolkit.request.args.get("version"), _fetch_versions, _fetch_fdo)
+
+
+def episerve_file_url(res, pkg):
+    """Template helper: the link of a resource for this visitor and this page's version.
+
+    Signed for logged-in users (restricted files); at ``?version=`` a DOIP file links to that version and
+    ``fdo.json`` to the FDO record at that version.
+    """
+    commit = episerve_request_version()
+    if commit and versions.is_fdo_resource(res):
+        return versions.fdo_url(pkg, commit, DOIP_NAMESPACE)
+    return versions.with_version(episerve_signed_url(res.get("url") or ""), commit, DOIP_NAMESPACE)
 
 
 def _json(data, status=200):
-    # private: the links of restricted files are signed for the visitor
     return Response(json.dumps(data), status=status, content_type="application/json",
-                    headers={"Cache-Control": "private, max-age=300"} if status == 200 else None)
-
-
-def _restricted(qids):
-    """The QIDs among ``qids`` whose CKAN entry has ``access = restricted``. An entry that cannot be read is
-    treated as open: the DOIP server checks access to the file itself."""
-    restricted = set()
-    for qid in qids:
-        try:
-            pkg = toolkit.get_action("package_show")({"ignore_auth": True}, {"id": qid.lower()})
-        except Exception:
-            continue
-        extras = {e.get("key"): e.get("value") for e in pkg.get("extras") or []}
-        if extras.get("access") == "restricted":
-            restricted.add(qid)
-    return restricted
+                    headers={"Cache-Control": "public, max-age=300"} if status == 200 else None)
 
 
 def lineage_view(qid):
     """The lineage tab's data: the API's upstream lineage of ``qid`` as a diagram and steps (see lineage.py)."""
     if not lineage.valid_qid(qid):
         return _json({"error": "not a QID"}, 400)
-    query = urllib.parse.urlencode({"object": qid.upper()})
+    params = {"object": qid.upper()}
+    commit = versions.valid_commit(toolkit.request.args.get("version"))
+    if commit:
+        params["version"] = commit
+    query = urllib.parse.urlencode(params)
     url = f"{API_INTERNAL_URL.rstrip('/')}/lineage/events?{query}"
     try:
         with urllib.request.urlopen(url, timeout=30) as r:
@@ -82,9 +115,7 @@ def lineage_view(qid):
         return _json({"error": f"lineage service answered {e.code}"}, 502)
     except Exception:
         return _json({"error": "lineage service unavailable"}, 502)
-    restricted = _restricted(lineage.platform_qids(result, DOIP_NAMESPACE))
-    sign = episerve_signed_url if toolkit.current_user.is_authenticated else None
-    return _json(lineage.view(result, DOIP_NAMESPACE, restricted, sign, API_PUBLIC_URL))
+    return _json(lineage.view(result, DOIP_NAMESPACE, API_PUBLIC_URL))
 
 
 class EPIServeThemePlugin(plugins.SingletonPlugin):
@@ -95,11 +126,15 @@ class EPIServeThemePlugin(plugins.SingletonPlugin):
     def get_helpers(self):
         return {
             "episerve_signed_url": episerve_signed_url,
+            "episerve_request_version": episerve_request_version,
+            "episerve_version": episerve_version,
+            "episerve_file_url": episerve_file_url,
             "episerve_model_card": model_card.model_card,
             "episerve_is_card_extra": lambda key: key in model_card.CARD_EXTRAS,
             "episerve_lineage_qid": lineage.qid_for,
             "episerve_with_created": dates.with_created,
-            "episerve_lineage_api_url": lambda qid: f"{API_PUBLIC_URL.rstrip('/')}/lineage/events?object={qid}",
+            "episerve_lineage_api_url": lambda qid, version=None: (
+                f"{API_PUBLIC_URL.rstrip('/')}/lineage/events?object={qid}" + (f"&version={version}" if version else "")),
         }
 
     def update_config(self, config):

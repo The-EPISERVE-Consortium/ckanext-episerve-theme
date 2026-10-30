@@ -12,7 +12,7 @@
   {% if res.url and h.is_url(res.url) %}
     <li>
       <div class="btn-group">
-      <a class="btn btn-primary resource-url-analytics" href="{{ h.episerve_signed_url(res.url) }}">
+      <a class="btn btn-primary resource-url-analytics" href="{{ h.episerve_file_url(res, pkg) }}">
         {% if res.resource_type in ('listing', 'service') %}
           <i class="fa fa-eye"></i> {{ _('View') }}
         {% elif  res.resource_type == 'api' %}
@@ -31,7 +31,12 @@
 
 {% block resource_read_url %}
   {% if res.url and h.is_url(res.url) %}
-    <p class="text-muted ellipsis">{{ _('URL:') }} <a class="resource-url-analytics" href="{{ h.episerve_signed_url(res.url) }}" title="{{ res.url }}">{{ res.url }}</a></p>
+    {% set file_url = h.episerve_file_url(res, pkg) %}
+    {% if h.episerve_request_version() %}
+    <p class="epi-version-banner">{{ _('Version') }} <span class="epi-card-hint">@{{ h.episerve_request_version()[:8] }}</span> &middot;
+      <a href="{{ h.url_for(pkg.type ~ '_resource.read', id=pkg.name, resource_id=res.id) }}">{{ _('Show the latest version') }}</a></p>
+    {% endif %}
+    <p class="text-muted ellipsis">{{ _('URL:') }} <a class="resource-url-analytics" href="{{ file_url }}" title="{{ file_url }}">{{ file_url }}</a></p>
   {% elif res.url %}
     <p class="text-muted break-word">{{ _('URL:') }} {{ res.url }}</p>
   {% endif %}

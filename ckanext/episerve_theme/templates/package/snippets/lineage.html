@@ -2,14 +2,14 @@
 Lineage tab: where this object comes from (upstream), as a diagram and a list of steps.
 Loaded when the tab is first opened: /lineage-view/<QID> (plugin.py, lineage.py) asks the API server.
 #}
-<div class="epi-lineage" data-qid="{{ qid }}">
-  <p class="epi-api-intro">{{ _('Where this item comes from, oldest step first. Each file links to its download in the version shown (@…); the boxes are links too.') }}</p>
+<div class="epi-lineage" data-qid="{{ qid }}" data-version="{{ version or '' }}">
+  <p class="epi-api-intro">{{ _('Where this item comes from, oldest step first. Each file links to its page in the version shown (@…), with preview and download; the boxes are links too.') }}</p>
   <div class="epi-lineage-status">{{ _('Loading…') }}</div>
   <div class="epi-lineage-diagram"></div>
   <div class="epi-lineage-steps"></div>
   <p class="epi-card-hint epi-lineage-json">
     {{ _('Also available in the OpenLineage format:') }}
-    <a href="{{ h.episerve_lineage_api_url(qid) }}" target="_blank" rel="noopener">{{ h.episerve_lineage_api_url(qid) }}</a>
+    <a href="{{ h.episerve_lineage_api_url(qid, version) }}" target="_blank" rel="noopener">{{ h.episerve_lineage_api_url(qid, version) }}</a>
   </p>
 </div>
 <script>
@@ -27,7 +27,7 @@ Loaded when the tab is first opened: /lineage-view/<QID> (plugin.py, lineage.py)
     if (item.url) {
       name = el('a', null, item.label);
       name.href = item.url;
-      name.target = '_blank'; name.rel = 'noopener';
+      if (item.url.charAt(0) !== '/') { name.target = '_blank'; name.rel = 'noopener'; }
     } else {
       name = el('span', null, item.label);
     }
@@ -35,7 +35,6 @@ Loaded when the tab is first opened: /lineage-view/<QID> (plugin.py, lineage.py)
     span.appendChild(name);
     if (item.version) span.appendChild(el('span', 'epi-card-hint', ' @' + item.version));
     if (item.note) span.appendChild(el('span', 'epi-card-hint', ' (' + item.note + ')'));
-    if (item.restricted && !item.url) span.appendChild(el('span', 'epi-card-hint', ' ' + {{ _('(restricted: log in to download)')|tojson }}));
     return span;
   }
   function list(items) {
@@ -112,7 +111,8 @@ Loaded when the tab is first opened: /lineage-view/<QID> (plugin.py, lineage.py)
     if (loaded) return;
     loaded = true;
     var root = document.querySelector('.epi-lineage');
-    fetch('/lineage-view/' + encodeURIComponent(root.dataset.qid))
+    var version = root.dataset.version;
+    fetch('/lineage-view/' + encodeURIComponent(root.dataset.qid) + (version ? '?version=' + encodeURIComponent(version) : ''))
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
       .then(function (res) {
         if (!res.ok) throw new Error(res.data.error || 'error');

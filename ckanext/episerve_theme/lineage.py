@@ -8,7 +8,6 @@ on its own.
 """
 
 import re
-from typing import Callable
 from urllib.parse import urlsplit
 
 _QID = re.compile(r"[Qq]\d{6,}")
@@ -97,16 +96,6 @@ def _dataset_info(entry: dict, doip_namespace: str, api_url: str = "") -> dict:
             "full_version": "", "version": "", "external": True}
 
 
-def platform_qids(result: dict, doip_namespace: str) -> set[str]:
-    """Every platform object (QID) whose files appear in the events, to look up which are restricted."""
-    qids = set()
-    for event in result.get("events") or []:
-        for entry in (event.get("inputs") or []) + (event.get("outputs") or []):
-            info = _dataset_info(entry, doip_namespace)
-            if info["qid"]:
-                qids.add(info["qid"])
-    return qids
-
 
 def _job_info(event: dict) -> dict:
     """Label, kind, time and link of an event's job."""
@@ -128,30 +117,23 @@ def _job_info(event: dict) -> dict:
             "url": f"/dataset/{qid.lower()}" if qid else None}
 
 
-def view(result: dict, doip_namespace: str, restricted: set[str] | None = None,
-         sign: Callable[[str], str] | None = None, api_url: str = "") -> dict:
+def view(result: dict, doip_namespace: str, api_url: str = "") -> dict:
     """The diagram (Mermaid source, with ``links``: where a click on each box leads) and the steps of an
     upstream lineage result, oldest first. QIDs are not in the boxes; they are the boxes' and links' tooltips.
 
     Args:
         result: The API's answer ``{"object", "kind", "events", "unresolved", "truncated"}``.
         doip_namespace: The DOIP base URL the API uses as the namespace of platform files.
-        restricted: QIDs of restricted datasets: their files are only linked when ``sign`` is given.
-        sign: Turns a DOIP URL into a signed link (for a logged-in visitor); None for anonymous visitors.
         api_url: The API server's public address, for links to benchmark pages.
     """
-    restricted = {q.upper() for q in restricted or ()}
-
     def item(info: dict, note: str = "") -> dict:
-        """One file in the table, linked at its version when the event names one (else as it is now)."""
+        """One file in the table. A platform file links to its object's page at the version shown (that page
+        has the preview and the download), else to its current page; a source to the source."""
         url = info["file_url"]
-        if info["qid"] and info["qid"] in restricted:
-            url = sign(url) if sign else None     # sign the plain file URL; the version is added after
-        if url and not info["external"] and not info.get("page") and info["full_version"]:
-            url = f"{url}{'&' if '?' in url else '?'}version={info['full_version']}"
+        if info["qid"]:
+            url = f"/dataset/{info['qid'].lower()}" + (f"?version={info['full_version']}" if info["full_version"] else "")
         return {"label": info["label"], "url": url, "version": info["version"], "qid": info["qid"] or "",
-                "note": note, "external": info["external"],
-                "restricted": bool(info["qid"] and info["qid"] in restricted)}
+                "note": note, "external": info["external"]}
     current = (result.get("object") or "").upper()
     nodes: dict[str, dict] = {}
     lines = [

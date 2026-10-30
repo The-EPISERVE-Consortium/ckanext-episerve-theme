@@ -6,7 +6,8 @@ pkg      - The parent package dict
 can_edit - Whether the current user may edit this resource
 #}
 {% set url_action = pkg.type ~ ('_resource.edit' if url_is_edit and can_edit else '_resource.read') %}
-{% set url = url or h.url_for(url_action, id=pkg.name, resource_id=res.id) %}
+{% set version = h.episerve_request_version() %}
+{% set url = url or (h.url_for(url_action, id=pkg.name, resource_id=res.id) ~ ('?version=' ~ version if version else '')) %}
 
 <li class="resource-item" data-id="{{ res.id }}">
   <div class="heading-wrap">
@@ -51,7 +52,7 @@ can_edit - Whether the current user may edit this resource
       {% endblock %}
       {% if res.url and h.is_url(res.url) %}
       <li>
-        <a class="dropdown-item resource-url-analytics" href="{{ h.episerve_signed_url(res.url) }}" target="_blank" rel="noreferrer">
+        <a class="dropdown-item resource-url-analytics" href="{{ h.episerve_file_url(res, pkg) }}" target="_blank" rel="noreferrer">
           {% if res.has_views or res.url_type == 'upload' %}
             <i class="fa fa-arrow-circle-down"></i> {{ _('Download') }}
           {% else %}
