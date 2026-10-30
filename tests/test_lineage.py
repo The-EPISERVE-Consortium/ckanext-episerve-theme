@@ -44,7 +44,8 @@ V = "93ee770fc2315d43" + "0" * 48
 def test_steps_link_to_the_files_and_carry_versions():
     view = l.view(RESULT, DOIP)
     download, run = view["steps"]          # oldest first
-    assert (run["label"], run["time"], run["url"]) == ("model run: baseline-nullmodel", "2026-10-19", "/dataset/q1792420591934")
+    # the run is this page's object: its step has no link back here
+    assert (run["label"], run["time"], run["url"]) == ("model run: baseline-nullmodel", "2026-10-19", None)
     # a file links to its object's page at the version shown (preview and download are there), else its current page
     assert run["inputs"] == [{"label": "GrippeWeb.parquet", "version": "93ee770f", "external": False,
                               "qid": "Q3274128860531", "note": "", "url": f"/dataset/q3274128860531?version={V}"}]
@@ -55,7 +56,7 @@ def test_steps_link_to_the_files_and_carry_versions():
                                              [], [_ds("Q3274128860531/GrippeWeb.parquet", V)])]}
     wrote = l.view(versioned, DOIP)["steps"][0]["outputs"][0]
     assert wrote["version"] == "93ee770f" and wrote["url"] == f"/dataset/q3274128860531?version={V}"
-    assert download["label"] == "download: grippeweb"
+    assert download["label"] == "download: grippeweb" and download["url"] == l.DOWNLOADER_CONFIG_URL
     source = download["inputs"][0]
     assert source["external"] and source["label"] == "RKI (GitHub)"
     assert source["url"].startswith("https://raw.githubusercontent.com/robert-koch-institut/")
@@ -118,7 +119,7 @@ def test_a_file_in_a_folder_shows_its_name_and_links_its_path():
 
 def test_boxes_link_like_the_table_and_show_the_qid_as_tooltip():
     links = l.view(RESULT, DOIP)["links"]
-    assert links["j0"] == {"url": "/dataset/q1792420591934", "title": "Q1792420591934"}
+    assert links["j0"] == {"url": "", "title": "Q1792420591934"}          # this page's run: no link
     assert links["d0"] == {"url": f"/dataset/q3274128860531?version={V}", "title": "Q3274128860531"}
     assert links["d2"]["url"].startswith("https://raw.githubusercontent.com/") and links["d2"]["title"] == "RKI (GitHub)"
 
@@ -137,3 +138,20 @@ def test_source_shows_when_it_last_changed():
     view = l.view({"object": "Q1", "events": [event]}, DOIP)
     assert view["steps"][0]["inputs"][0]["note"] == "changed 2026-10-16"
     assert "Open-Meteo<br/>changed 2026-10-16" in view["mermaid"]
+
+
+def test_download_step_shows_the_display_name_and_links_the_downloader_settings():
+    event = _event("dataset-downloader/corona_incidence_states", "Q1679286399912", "dataset", "2026-10-16T23:00:13Z",
+                   [], [_ds("Q1679286399912/covid.parquet")])
+    event["run"]["facets"]["episerve"]["display_name"] = "Federal State COVID-19 7-Day Incidence"
+    on_run_page = l.view({"object": "Q1792274835520", "events": [event]}, DOIP)["steps"][0]
+    assert on_run_page["label"] == "download: Federal State COVID-19 7-Day Incidence"
+    assert on_run_page["url"].startswith("https://github.com/The-EPISERVE-Consortium/workflow-prefect__dataset-downloader/")
+    # on the dataset's own page too: the settings are new information there
+    assert l.view({"object": "Q1679286399912", "events": [event]}, DOIP)["steps"][0]["url"] == l.DOWNLOADER_CONFIG_URL
+
+
+def test_steps_of_other_objects_keep_their_link():
+    bench = _event("benchmark/3", "Q1792274309877", "benchmark", "2026-10-17T21:58:29Z", [], [])
+    assert l.view({"object": "Q1792274835520", "events": [bench]}, DOIP)["steps"][0]["url"] == "/dataset/q1792274309877"
+    assert l.view({"object": "Q1792274309877", "events": [bench]}, DOIP)["steps"][0]["url"] is None

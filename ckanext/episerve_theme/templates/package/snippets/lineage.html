@@ -82,7 +82,11 @@ Loaded when the tab is first opened: /lineage-view/<QID> (plugin.py, lineage.py)
     data.steps.forEach(function (step) {
       var tr = el('tr');
       var name = el('td', 'epi-card-nowrap');
-      if (step.url) { var a = el('a', null, step.label); a.href = step.url; a.title = step.qid; name.appendChild(a); } else { name.textContent = step.label; }
+      if (step.url) {
+        var a = el('a', null, step.label); a.href = step.url; a.title = step.qid;
+        if (step.url.charAt(0) !== '/') { a.target = '_blank'; a.rel = 'noopener'; }
+        name.appendChild(a);
+      } else { name.textContent = step.label; if (step.qid) name.title = step.qid; }
       tr.appendChild(name);
       tr.appendChild(el('td', 'epi-card-nowrap', step.time || ''));
       tr.appendChild(list(step.inputs));

@@ -53,6 +53,10 @@ def _wrap(text: str, width: int = 26) -> str:
     return "<br/>".join(_label(_short(l, width + 6)) for l in lines[:4])
 
 
+# What a download step links to: the downloader's list of datasets (source URL and settings of each).
+DOWNLOADER_CONFIG_URL = ("https://github.com/The-EPISERVE-Consortium/workflow-prefect__dataset-downloader"
+                         "/blob/main/deploy/datasets.yaml")
+
 _SOURCE_NAMES = {"robert-koch-institut": "RKI", "api.open-meteo.com": "Open-Meteo",
                  "xmart-api-public.who.int": "WHO"}
 
@@ -110,11 +114,12 @@ def _job_info(event: dict) -> dict:
     elif group == "benchmark":
         label = f"benchmark {rest}"
     elif group == "dataset-downloader":
-        label = f"download: {rest}"
+        label = f"download: {facet.get('display_name') or rest}"
     else:
         label = job
-    return {"label": label, "kind": kind, "time": when, "qid": qid, "source_changed": changed,
-            "url": f"/dataset/{qid.lower()}" if qid else None}
+    # a download links to the downloader's settings for the dataset; its files link to the dataset's page
+    url = DOWNLOADER_CONFIG_URL if group == "dataset-downloader" else (f"/dataset/{qid.lower()}" if qid else None)
+    return {"label": label, "kind": kind, "time": when, "qid": qid, "source_changed": changed, "url": url}
 
 
 def view(result: dict, doip_namespace: str, api_url: str = "") -> dict:
@@ -164,6 +169,8 @@ def view(result: dict, doip_namespace: str, api_url: str = "") -> dict:
 
     for index, event in enumerate(result.get("events") or []):
         job = _job_info(event)
+        if job["url"] and job["url"].startswith("/") and job["qid"].upper() == current:
+            job["url"] = None       # the step that made this page's object: a link would lead back here
         job_id = f"j{index}"
         when = f"<br/>{job['time']}" if job["time"] else ""
         lines.append(f'{job_id}(["{_label(job["label"])}{when}"]):::job')
