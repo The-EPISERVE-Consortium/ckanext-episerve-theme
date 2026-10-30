@@ -38,6 +38,22 @@ def _short(text: str, limit: int = 42) -> str:
     return text if len(text) <= limit else text[: limit - 1] + "…"
 
 
+def _wrap(text: str, width: int = 26) -> str:
+    """A long name over several lines of the diagram (``<br/>``), broken after ``_``, ``-`` or ``.``."""
+    stem, dot, ext = text.rpartition(".")
+    parts = re.findall(r"[^_\-.]+[_\-.]?|[_\-.]", stem if dot and len(ext) <= 8 else text)
+    if dot and len(ext) <= 8 and parts:
+        parts[-1] += "." + ext                     # keep the extension with the last part of the name
+    lines, line = [], ""
+    for part in parts:
+        if line and len(line) + len(part) > width:
+            lines.append(line)
+            line = ""
+        line += part
+    lines.append(line)
+    return "<br/>".join(_label(_short(l, width + 6)) for l in lines[:4])
+
+
 _SOURCE_NAMES = {"robert-koch-institut": "RKI", "api.open-meteo.com": "Open-Meteo",
                  "xmart-api-public.who.int": "WHO"}
 
@@ -98,6 +114,7 @@ def _job_info(event: dict) -> dict:
     facet = ((event.get("run") or {}).get("facets") or {}).get("episerve") or {}
     kind, qid = facet.get("kind", ""), facet.get("qid", "")
     when = (event.get("eventTime") or "")[:10]
+    changed = (facet.get("source_changed_at") or "")[:10]
     group, _, rest = job.partition("/")
     if group == "model-runner":
         label = f"model run: {rest.rsplit('__', 1)[-1]}"
@@ -107,13 +124,14 @@ def _job_info(event: dict) -> dict:
         label = f"download: {rest}"
     else:
         label = job
-    return {"label": label, "kind": kind, "time": when, "qid": qid,
+    return {"label": label, "kind": kind, "time": when, "qid": qid, "source_changed": changed,
             "url": f"/dataset/{qid.lower()}" if qid else None}
 
 
 def view(result: dict, doip_namespace: str, restricted: set[str] | None = None,
          sign: Callable[[str], str] | None = None, api_url: str = "") -> dict:
-    """The diagram (Mermaid source) and the steps of an upstream lineage result.
+    """The diagram (Mermaid source, with ``links``: where a click on each box leads) and the steps of an
+    upstream lineage result, oldest first. QIDs are not in the boxes; they are the boxes' and links' tooltips.
 
     Args:
         result: The API's answer ``{"object", "kind", "events", "unresolved", "truncated"}``.
@@ -124,15 +142,16 @@ def view(result: dict, doip_namespace: str, restricted: set[str] | None = None,
     """
     restricted = {q.upper() for q in restricted or ()}
 
-    def item(info: dict) -> dict:
+    def item(info: dict, note: str = "") -> dict:
         """One file in the table, linked at its version when the event names one (else as it is now)."""
         url = info["file_url"]
         if info["qid"] and info["qid"] in restricted:
             url = sign(url) if sign else None     # sign the plain file URL; the version is added after
         if url and not info["external"] and not info.get("page") and info["full_version"]:
             url = f"{url}{'&' if '?' in url else '?'}version={info['full_version']}"
-        return {"label": info["label"], "url": url, "version": info["version"],
-                "external": info["external"], "restricted": bool(info["qid"] and info["qid"] in restricted)}
+        return {"label": info["label"], "url": url, "version": info["version"], "qid": info["qid"] or "",
+                "note": note, "external": info["external"],
+                "restricted": bool(info["qid"] and info["qid"] in restricted)}
     current = (result.get("object") or "").upper()
     nodes: dict[str, dict] = {}
     lines = [
@@ -143,16 +162,23 @@ def view(result: dict, doip_namespace: str, restricted: set[str] | None = None,
         "classDef current stroke:#1e3a5f,stroke-width:3px",
     ]
     steps = []
+    links: dict[str, dict] = {}     # diagram box -> where a click on it leads, and its tooltip
 
-    def node(entry: dict) -> tuple[str, dict]:
+    def node(entry: dict, note: str = "") -> tuple[str, dict]:
         info = _dataset_info(entry, doip_namespace, api_url)
         known = nodes.get(info["key"])
         if known is None:
-            known = {**info, "id": f"d{len(nodes)}", "versions": []}
+            known = {**info, "id": f"d{len(nodes)}", "versions": [], "notes": []}
             nodes[info["key"]] = known
         if info["version"] and info["version"] not in known["versions"]:
             known["versions"].append(info["version"])
+        if note and note not in known["notes"]:
+            known["notes"].append(note)
         return known["id"], info
+
+    def link(node_id: str, entry: dict) -> None:
+        if node_id not in links:
+            links[node_id] = {"url": entry["url"] or "", "title": entry["qid"] or entry["label"]}
 
     for index, event in enumerate(result.get("events") or []):
         job = _job_info(event)
@@ -161,22 +187,27 @@ def view(result: dict, doip_namespace: str, restricted: set[str] | None = None,
         lines.append(f'{job_id}(["{_label(job["label"])}{when}"]):::job')
         if job["qid"] and job["qid"].upper() == current:
             lines.append(f"class {job_id} current")
+        links[job_id] = {"url": job["url"] or "", "title": job["qid"] or job["label"]}
+        note = f"changed {job['source_changed']}" if job["source_changed"] else ""
         inputs, outputs = [], []
         for entry in event.get("inputs") or []:
-            node_id, info = node(entry)
+            info = _dataset_info(entry, doip_namespace, api_url)
+            node_id, info = node(entry, note if info["external"] else "")
             lines.append(f"{node_id} --> {job_id}")
-            inputs.append(item(info))
+            inputs.append(item(info, note if info["external"] else ""))
+            link(node_id, inputs[-1])
         for entry in event.get("outputs") or []:
             node_id, info = node(entry)
             lines.append(f"{job_id} --> {node_id}")
             outputs.append(item(info))
+            link(node_id, outputs[-1])
         steps.append({**job, "inputs": inputs, "outputs": outputs})
 
     for known in nodes.values():
         version = f"<br/>@{', @'.join(known['versions'])}" if known["versions"] else ""
-        qid = f"<br/>{known['qid']}" if known["qid"] and known["label"] != known["qid"] else ""
+        notes = "".join(f"<br/>{_label(n)}" for n in known["notes"])
         cls = "ext" if known["external"] else "data"
-        lines.append(f'{known["id"]}["{_label(_short(known["label"]))}{qid}{version}"]:::{cls}')
+        lines.append(f'{known["id"]}["{_wrap(known["label"])}{version}{notes}"]:::{cls}')
         if known["qid"] == current:
             lines.append(f"class {known['id']} current")
 
@@ -184,7 +215,8 @@ def view(result: dict, doip_namespace: str, restricted: set[str] | None = None,
         "object": current,
         "kind": result.get("kind"),
         "mermaid": "\n".join(lines) if steps else "",
-        "steps": steps,
+        "links": links,
+        "steps": steps[::-1],       # oldest first, as the diagram reads from left to right
         "unresolved": result.get("unresolved") or [],
         "truncated": result.get("truncated") or [],
     }

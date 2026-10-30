@@ -3,7 +3,7 @@ Lineage tab: where this object comes from (upstream), as a diagram and a list of
 Loaded when the tab is first opened: /lineage-view/<QID> (plugin.py, lineage.py) asks the API server.
 #}
 <div class="epi-lineage" data-qid="{{ qid }}">
-  <p class="epi-api-intro">{{ _('Where this item comes from: the steps that produced it and the files and sources they read, with the version (lakeFS commit) of each platform file. Built from the FAIR Digital Object records. The files link to their download in the version shown (@…), otherwise as they are now.') }}</p>
+  <p class="epi-api-intro">{{ _('Where this item comes from, oldest step first. Each file links to its download in the version shown (@…); the boxes are links too.') }}</p>
   <div class="epi-lineage-status">{{ _('Loading…') }}</div>
   <div class="epi-lineage-diagram"></div>
   <div class="epi-lineage-steps"></div>
@@ -23,15 +23,18 @@ Loaded when the tab is first opened: /lineage-view/<QID> (plugin.py, lineage.py)
   }
   function link(item) {
     var span = el('span', 'epi-lineage-item');
+    var name;
     if (item.url) {
-      var a = el('a', null, item.label);
-      a.href = item.url;
-      a.target = '_blank'; a.rel = 'noopener';
-      span.appendChild(a);
+      name = el('a', null, item.label);
+      name.href = item.url;
+      name.target = '_blank'; name.rel = 'noopener';
     } else {
-      span.appendChild(el('span', null, item.label));
+      name = el('span', null, item.label);
     }
+    if (item.qid) name.title = item.qid;
+    span.appendChild(name);
     if (item.version) span.appendChild(el('span', 'epi-card-hint', ' @' + item.version));
+    if (item.note) span.appendChild(el('span', 'epi-card-hint', ' (' + item.note + ')'));
     if (item.restricted && !item.url) span.appendChild(el('span', 'epi-card-hint', ' ' + {{ _('(restricted: log in to download)')|tojson }}));
     return span;
   }
@@ -43,6 +46,27 @@ Loaded when the tab is first opened: /lineage-view/<QID> (plugin.py, lineage.py)
     });
     if (!items.length) td.textContent = '–';
     return td;
+  }
+  // Mermaid's strict mode allows no click handlers in the source: the boxes are linked here instead.
+  function clickable(box, links) {
+    box.querySelectorAll('g.node').forEach(function (g) {
+      var m = /^flowchart-(.+)-\d+$/.exec(g.id || '');
+      var target = m && links[m[1]];
+      if (!target) return;
+      var title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+      title.textContent = target.title;
+      g.insertBefore(title, g.firstChild);
+      if (!target.url) return;
+      g.style.cursor = 'pointer';
+      g.setAttribute('role', 'link');
+      g.setAttribute('tabindex', '0');
+      function go() {
+        if (target.url.charAt(0) === '/') { window.location.href = target.url; }
+        else { window.open(target.url, '_blank', 'noopener'); }
+      }
+      g.addEventListener('click', go);
+      g.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+    });
   }
   function render(root, data) {
     var status = root.querySelector('.epi-lineage-status');
@@ -59,7 +83,7 @@ Loaded when the tab is first opened: /lineage-view/<QID> (plugin.py, lineage.py)
     data.steps.forEach(function (step) {
       var tr = el('tr');
       var name = el('td', 'epi-card-nowrap');
-      if (step.url) { var a = el('a', null, step.label); a.href = step.url; name.appendChild(a); } else { name.textContent = step.label; }
+      if (step.url) { var a = el('a', null, step.label); a.href = step.url; a.title = step.qid; name.appendChild(a); } else { name.textContent = step.label; }
       tr.appendChild(name);
       tr.appendChild(el('td', 'epi-card-nowrap', step.time || ''));
       tr.appendChild(list(step.inputs));
@@ -79,7 +103,9 @@ Loaded when the tab is first opened: /lineage-view/<QID> (plugin.py, lineage.py)
                            flowchart: { htmlLabels: true, curve: 'basis' } });
       return mermaid.render('epi-lineage-svg', data.mermaid);
     }).then(function (out) {
-      root.querySelector('.epi-lineage-diagram').innerHTML = out.svg;
+      var box = root.querySelector('.epi-lineage-diagram');
+      box.innerHTML = out.svg;
+      clickable(box, data.links || {});
     }).catch(function () { /* the table below shows the same */ });
   }
   window.epiLineage = function () {

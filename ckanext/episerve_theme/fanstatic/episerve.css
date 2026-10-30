@@ -775,6 +775,8 @@ body.epi-home .main { padding-top: 0 !important; padding-bottom: 0 !important; }
 .epi-lineage-status { color: var(--epi-muted); font-size: 0.9rem; margin-bottom: 0.75rem; }
 .epi-lineage-diagram { overflow-x: auto; margin-bottom: 1.25rem; }
 .epi-lineage-diagram svg { max-width: 100%; height: auto; }
+.epi-lineage-diagram g.node[role="link"]:hover rect,
+.epi-lineage-diagram g.node[role="link"]:focus rect { stroke-width: 2.5px; }
 .epi-lineage-item a { word-break: break-all; }
 .epi-lineage-json { margin-top: 1rem; word-break: break-all; }
 

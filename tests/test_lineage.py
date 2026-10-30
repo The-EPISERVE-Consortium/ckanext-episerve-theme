@@ -43,12 +43,14 @@ V = "93ee770fc2315d43" + "0" * 48
 
 def test_steps_link_to_the_files_and_carry_versions():
     view = l.view(RESULT, DOIP)
-    run, download = view["steps"]
+    download, run = view["steps"]          # oldest first
     assert (run["label"], run["time"], run["url"]) == ("model run: baseline-nullmodel", "2026-10-19", "/dataset/q1792420591934")
     # read: the file at the version the run read; wrote: the file as it is
     assert run["inputs"] == [{"label": "GrippeWeb.parquet", "version": "93ee770f", "external": False, "restricted": False,
+                              "qid": "Q3274128860531", "note": "",
                               "url": f"{DOIP}/doip/retrieve/Q3274128860531/GrippeWeb.parquet?version={V}"}]
     assert run["outputs"] == [{"label": "predictions.tsv", "version": "", "external": False, "restricted": False,
+                               "qid": "Q1792420591934", "note": "",
                                "url": f"{DOIP}/doip/retrieve/Q1792420591934/predictions.tsv"}]
     # a download that names the version it produced links that version
     versioned = {**RESULT, "events": [_event("dataset-downloader/grippeweb", "Q3274128860531", "dataset", "2026-10-19T00:00:00Z",
@@ -71,11 +73,11 @@ def test_source_names():
 
 def test_restricted_files_are_linked_only_when_signed():
     anonymous = l.view(RESULT, DOIP, restricted={"Q3274128860531"})
-    read = anonymous["steps"][0]["inputs"][0]
+    read = anonymous["steps"][-1]["inputs"][0]
     assert read["url"] is None and read["restricted"] and read["version"] == "93ee770f"
-    assert anonymous["steps"][0]["outputs"][0]["url"].endswith("/Q1792420591934/predictions.tsv")   # open
+    assert anonymous["steps"][-1]["outputs"][0]["url"].endswith("/Q1792420591934/predictions.tsv")   # open
     signed = l.view(RESULT, DOIP, restricted={"Q3274128860531"}, sign=lambda u: u + "?exp=1&sig=s")
-    assert signed["steps"][0]["inputs"][0]["url"] == (
+    assert signed["steps"][-1]["inputs"][0]["url"] == (
         f"{DOIP}/doip/retrieve/Q3274128860531/GrippeWeb.parquet?exp=1&sig=s&version={V}")
 
 
@@ -88,7 +90,7 @@ def test_diagram_joins_the_same_file_and_marks_the_current_object():
     assert diagram[0] == "flowchart LR"
     # GrippeWeb.parquet is one box: written by the download, read by the run
     assert "d0 --> j0" in diagram and "j1 --> d0" in diagram
-    assert any(line.startswith('d0["GrippeWeb.parquet<br/>Q3274128860531<br/>@93ee770f"]') for line in diagram)
+    assert any(line.startswith('d0["GrippeWeb.parquet<br/>@93ee770f"]') for line in diagram)   # QID: tooltip
     assert "class j0 current" in diagram and "class d1 current" in diagram
 
 
@@ -101,7 +103,8 @@ def test_labels_cannot_break_the_diagram():
 
 def test_no_events_means_no_diagram():
     assert l.view({"object": "Q1", "kind": "model", "events": []}, DOIP) == {
-        "object": "Q1", "kind": "model", "mermaid": "", "steps": [], "unresolved": [], "truncated": []}
+        "object": "Q1", "kind": "model", "mermaid": "", "links": {}, "steps": [], "unresolved": [],
+        "truncated": []}
 
 
 def test_files_inside_the_cluster_are_never_linked():
@@ -115,7 +118,7 @@ def test_files_inside_the_cluster_are_never_linked():
     view = l.view(result, DOIP, api_url="https://api.example/")
     bench, raw = view["steps"][0]["inputs"]
     assert bench == {"label": "benchmark 2: input.parquet", "url": "https://api.example/ui/benchmarks/2",
-                     "version": "cccccccc", "external": False, "restricted": False}
+                     "version": "cccccccc", "external": False, "restricted": False, "qid": "", "note": ""}
     assert raw["label"] == "data-raw: incidence/x.tsv" and raw["url"] is None
     assert "lakefs://" not in str(view)
 
@@ -127,3 +130,29 @@ def test_a_file_in_a_folder_shows_its_name_and_links_its_path():
     out = l.view(result, DOIP)["steps"][0]["outputs"][0]
     assert out["label"] == "predictions.tsv"
     assert out["url"] == f"{DOIP}/doip/retrieve/Q1792267434533/output/predictions.tsv"
+
+
+def test_boxes_link_like_the_table_and_show_the_qid_as_tooltip():
+    links = l.view(RESULT, DOIP)["links"]
+    assert links["j0"] == {"url": "/dataset/q1792420591934", "title": "Q1792420591934"}
+    assert links["d0"] == {"url": f"{DOIP}/doip/retrieve/Q3274128860531/GrippeWeb.parquet?version={V}",
+                           "title": "Q3274128860531"}
+    assert links["d2"]["url"].startswith("https://raw.githubusercontent.com/") and links["d2"]["title"] == "RKI (GitHub)"
+    # a restricted file a visitor cannot download is not clickable
+    assert l.view(RESULT, DOIP, restricted={"Q3274128860531"})["links"]["d0"]["url"] == ""
+
+
+def test_long_names_wrap_instead_of_being_cut():
+    result = {"object": "Q1", "events": [_event("dataset-downloader/x", "Q1679286399912", "dataset", "", [],
+                                                [_ds("Q1679286399912/COVID-19-Faelle_7-Tage-Inzidenz_Bundeslaender.parquet")])]}
+    box = next(line for line in l.view(result, DOIP)["mermaid"].splitlines() if line.startswith("d0["))
+    assert "…" not in box and "Bundeslaender.parquet" in box and box.count("<br/>") >= 1
+
+
+def test_source_shows_when_it_last_changed():
+    event = _event("dataset-downloader/x", "Q1679286399912", "dataset", "2026-10-16T23:00:13Z",
+                   [{"namespace": "https://api.open-meteo.com", "name": "v1/forecast"}], [])
+    event["run"]["facets"]["episerve"]["source_changed_at"] = "2026-10-16T08:00:00Z"
+    view = l.view({"object": "Q1", "events": [event]}, DOIP)
+    assert view["steps"][0]["inputs"][0]["note"] == "changed 2026-10-16"
+    assert "Open-Meteo<br/>changed 2026-10-16" in view["mermaid"]
