@@ -47,8 +47,24 @@ DOIP_NAMESPACE = os.environ.get("DOIP_PUBLIC_URL", "https://doip.episerve.zib.de
 
 
 def _json(data, status=200):
+    # private: the links of restricted files are signed for the visitor
     return Response(json.dumps(data), status=status, content_type="application/json",
-                    headers={"Cache-Control": "public, max-age=300"} if status == 200 else None)
+                    headers={"Cache-Control": "private, max-age=300"} if status == 200 else None)
+
+
+def _restricted(qids):
+    """The QIDs among ``qids`` whose CKAN entry has ``access = restricted``. An entry that cannot be read is
+    treated as open: the DOIP server checks access to the file itself."""
+    restricted = set()
+    for qid in qids:
+        try:
+            pkg = toolkit.get_action("package_show")({"ignore_auth": True}, {"id": qid.lower()})
+        except Exception:
+            continue
+        extras = {e.get("key"): e.get("value") for e in pkg.get("extras") or []}
+        if extras.get("access") == "restricted":
+            restricted.add(qid)
+    return restricted
 
 
 def lineage_view(qid):
@@ -66,7 +82,9 @@ def lineage_view(qid):
         return _json({"error": f"lineage service answered {e.code}"}, 502)
     except Exception:
         return _json({"error": "lineage service unavailable"}, 502)
-    return _json(lineage.view(result, DOIP_NAMESPACE))
+    restricted = _restricted(lineage.platform_qids(result, DOIP_NAMESPACE))
+    sign = episerve_signed_url if toolkit.current_user.is_authenticated else None
+    return _json(lineage.view(result, DOIP_NAMESPACE, restricted, sign))
 
 
 class EPIServeThemePlugin(plugins.SingletonPlugin):

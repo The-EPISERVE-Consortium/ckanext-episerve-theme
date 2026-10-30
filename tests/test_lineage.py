@@ -38,17 +38,44 @@ def test_tab_only_for_objects_with_upstream():
     assert l.valid_qid("Q1792420591934") and not l.valid_qid("Q1/../x") and not l.valid_qid("")
 
 
-def test_steps_link_to_ckan_pages_and_carry_versions():
+V = "93ee770fc2315d43" + "0" * 48
+
+
+def test_steps_link_to_the_files_and_carry_versions():
     view = l.view(RESULT, DOIP)
     run, download = view["steps"]
     assert (run["label"], run["time"], run["url"]) == ("model run: baseline-nullmodel", "2026-10-19", "/dataset/q1792420591934")
-    assert run["inputs"] == [{"label": "GrippeWeb.parquet", "url": "/dataset/q3274128860531", "version": "93ee770f",
-                              "external": False}]
-    assert run["outputs"][0]["label"] == "predictions.tsv"
+    # read: the file at the version the run read; wrote: the file as it is
+    assert run["inputs"] == [{"label": "GrippeWeb.parquet", "version": "93ee770f", "external": False, "restricted": False,
+                              "url": f"{DOIP}/doip/retrieve/Q3274128860531/GrippeWeb.parquet?version={V}"}]
+    assert run["outputs"] == [{"label": "predictions.tsv", "version": "", "external": False, "restricted": False,
+                               "url": f"{DOIP}/doip/retrieve/Q1792420591934/predictions.tsv"}]
     assert download["label"] == "download: grippeweb"
     source = download["inputs"][0]
-    assert source["external"] and source["url"].startswith("https://raw.githubusercontent.com/")
-    assert source["label"] == "raw.githubusercontent.com › GrippeWeb.tsv"
+    assert source["external"] and source["label"] == "RKI (GitHub)"
+    assert source["url"].startswith("https://raw.githubusercontent.com/robert-koch-institut/")
+
+
+def test_source_names():
+    assert l.source_name("https://raw.githubusercontent.com/robert-koch-institut/X/main/x.tsv") == "RKI (GitHub)"
+    assert l.source_name("https://raw.githubusercontent.com/someone/X/main/x.tsv") == "someone (GitHub)"
+    assert l.source_name("https://api.open-meteo.com/v1/forecast?latitude=52") == "Open-Meteo"
+    assert l.source_name("https://xmart-api-public.who.int/FLUMART/VIW_FNT") == "WHO"
+    assert l.source_name("https://example.org/data.csv") == "example.org"
+
+
+def test_restricted_files_are_linked_only_when_signed():
+    anonymous = l.view(RESULT, DOIP, restricted={"Q3274128860531"})
+    read = anonymous["steps"][0]["inputs"][0]
+    assert read["url"] is None and read["restricted"] and read["version"] == "93ee770f"
+    assert anonymous["steps"][0]["outputs"][0]["url"].endswith("/Q1792420591934/predictions.tsv")   # open
+    signed = l.view(RESULT, DOIP, restricted={"Q3274128860531"}, sign=lambda u: u + "?exp=1&sig=s")
+    assert signed["steps"][0]["inputs"][0]["url"] == (
+        f"{DOIP}/doip/retrieve/Q3274128860531/GrippeWeb.parquet?exp=1&sig=s&version={V}")
+
+
+def test_platform_qids():
+    assert l.platform_qids(RESULT, DOIP) == {"Q3274128860531", "Q1792420591934"}
 
 
 def test_diagram_joins_the_same_file_and_marks_the_current_object():
