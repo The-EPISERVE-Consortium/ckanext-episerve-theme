@@ -771,6 +771,13 @@ body.epi-home .main { padding-top: 0 !important; padding-bottom: 0 !important; }
   .epi-card-dl dd { margin-bottom: 0.4rem; }
 }
 
+/* Lineage tab (package/snippets/lineage.html) */
+.epi-lineage-status { color: var(--epi-muted); font-size: 0.9rem; margin-bottom: 0.75rem; }
+.epi-lineage-diagram { overflow-x: auto; margin-bottom: 1.25rem; }
+.epi-lineage-diagram svg { max-width: 100%; height: auto; }
+.epi-lineage-item a { word-break: break-all; }
+.epi-lineage-json { margin-top: 1rem; word-break: break-all; }
+
 /* Remove CKAN core's triangle arrow on active facet items */
 .epi-facet-group .nav-item.active > a::before {
   display: none !important;

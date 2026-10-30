@@ -1,0 +1,96 @@
+{#
+Lineage tab: where this object comes from (upstream), as a diagram and a list of steps.
+Loaded when the tab is first opened: /lineage-view/<QID> (plugin.py, lineage.py) asks the API server.
+#}
+<div class="epi-lineage" data-qid="{{ qid }}">
+  <p class="epi-api-intro">{{ _('Where this item comes from: the steps that produced it and the files and sources they read, with the version (lakeFS commit) of each platform file. Built from the FAIR Digital Object records.') }}</p>
+  <div class="epi-lineage-status">{{ _('Loading…') }}</div>
+  <div class="epi-lineage-diagram"></div>
+  <div class="epi-lineage-steps"></div>
+  <p class="epi-card-hint epi-lineage-json">
+    {{ _('Also available in the OpenLineage format:') }}
+    <a href="{{ h.episerve_lineage_api_url(qid) }}" target="_blank" rel="noopener">{{ h.episerve_lineage_api_url(qid) }}</a>
+  </p>
+</div>
+<script>
+(function () {
+  var loaded = false;
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function link(item) {
+    var span = el('span', 'epi-lineage-item');
+    var a = el('a', null, item.label);
+    a.href = item.url;
+    if (item.external) { a.target = '_blank'; a.rel = 'noopener'; }
+    span.appendChild(a);
+    if (item.version) span.appendChild(el('span', 'epi-card-hint', ' @' + item.version));
+    return span;
+  }
+  function list(items) {
+    var td = el('td');
+    items.forEach(function (item, i) {
+      if (i) td.appendChild(document.createElement('br'));
+      td.appendChild(link(item));
+    });
+    if (!items.length) td.textContent = '–';
+    return td;
+  }
+  function render(root, data) {
+    var status = root.querySelector('.epi-lineage-status');
+    if (!data.steps || !data.steps.length) {
+      status.textContent = {{ _('No lineage recorded for this item.')|tojson }};
+      return;
+    }
+    status.textContent = '';
+    var table = el('table', 'epi-card-table');
+    var head = el('tr');
+    [{{ _('Step')|tojson }}, {{ _('Date')|tojson }}, {{ _('Read')|tojson }}, {{ _('Wrote')|tojson }}].forEach(function (t) { head.appendChild(el('th', null, t)); });
+    var thead = el('thead'); thead.appendChild(head); table.appendChild(thead);
+    var tbody = el('tbody');
+    data.steps.forEach(function (step) {
+      var tr = el('tr');
+      var name = el('td', 'epi-card-nowrap');
+      if (step.url) { var a = el('a', null, step.label); a.href = step.url; name.appendChild(a); } else { name.textContent = step.label; }
+      tr.appendChild(name);
+      tr.appendChild(el('td', 'epi-card-nowrap', step.time || ''));
+      tr.appendChild(list(step.inputs));
+      tr.appendChild(list(step.outputs));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    var scroll = el('div', 'epi-card-scroll'); scroll.appendChild(table);
+    root.querySelector('.epi-lineage-steps').appendChild(scroll);
+    if ((data.unresolved || []).length || (data.truncated || []).length) {
+      root.querySelector('.epi-lineage-steps').appendChild(el('p', 'epi-card-hint',
+        {{ _('Not shown:')|tojson }} + ' ' + (data.unresolved || []).concat(data.truncated || []).join(', ')));
+    }
+    import('https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.esm.min.mjs').then(function (m) {
+      var mermaid = m.default;
+      mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'base',
+                           flowchart: { htmlLabels: true, curve: 'basis' } });
+      return mermaid.render('epi-lineage-svg', data.mermaid);
+    }).then(function (out) {
+      root.querySelector('.epi-lineage-diagram').innerHTML = out.svg;
+    }).catch(function () { /* the table below shows the same */ });
+  }
+  window.epiLineage = function () {
+    if (loaded) return;
+    loaded = true;
+    var root = document.querySelector('.epi-lineage');
+    fetch('/lineage-view/' + encodeURIComponent(root.dataset.qid))
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.data.error || 'error');
+        render(root, res.data);
+      })
+      .catch(function (e) {
+        loaded = false;
+        root.querySelector('.epi-lineage-status').textContent = {{ _('Lineage is not available right now:')|tojson }} + ' ' + e.message;
+      });
+  };
+})();
+</script>

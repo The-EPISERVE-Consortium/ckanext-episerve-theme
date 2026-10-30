@@ -10,6 +10,8 @@
 {# Model entries get a "Model card" tab (opened first) from the card extras the sync flow writes. #}
 {% set card = h.episerve_model_card(pkg.extras) %}
 {% set first_tab = 'card' if card else ('resources' if not hide_files else 'info') %}
+{# Datasets, benchmark files and model runs get a "Lineage" tab (where the item comes from); models do not. #}
+{% set lineage_qid = h.episerve_lineage_qid(pkg) %}
 <div class="primary col-12" role="main">
 
   {% if h.check_access('package_update', {'id': pkg.id }) %}
@@ -52,6 +54,12 @@
         <button class="epi-ds-tab{% if first_tab == 'info' %} active{% endif %}" type="button"
                 onclick="epiTab(this,'tab-info')">{{ _('Additional Info') }}</button>
       </li>
+      {% if lineage_qid %}
+      <li class="nav-item" role="presentation">
+        <button class="epi-ds-tab" type="button"
+                onclick="epiTab(this,'tab-lineage'); epiLineage()">{{ _('Lineage') }}</button>
+      </li>
+      {% endif %}
       {% if not hide_files %}
       <li class="nav-item" role="presentation">
         <button class="epi-ds-tab" type="button"
@@ -79,6 +87,11 @@
       <div class="epi-pane" id="tab-info"{% if first_tab != 'info' %} style="display:none"{% endif %}>
         {% snippet "package/snippets/additional_info.html", pkg_dict=pkg %}
       </div>
+      {% if lineage_qid %}
+      <div class="epi-pane" id="tab-lineage" style="display:none">
+        {% snippet "package/snippets/lineage.html", qid=lineage_qid %}
+      </div>
+      {% endif %}
       {% if not hide_files %}
       <div class="epi-pane" id="tab-api" style="display:none">
         <p class="epi-api-intro">{{ _('You can access all data via a web API using e.g. Python or curl.') }}</p>
