@@ -102,3 +102,19 @@ def test_labels_cannot_break_the_diagram():
 def test_no_events_means_no_diagram():
     assert l.view({"object": "Q1", "kind": "model", "events": []}, DOIP) == {
         "object": "Q1", "kind": "model", "mermaid": "", "steps": [], "unresolved": [], "truncated": []}
+
+
+def test_files_inside_the_cluster_are_never_linked():
+    old = "c" * 64
+    result = {"object": "Q1792267434533", "events": [_event(
+        "model-runner/model__prediction__generic__chronos2-small", "Q1792267434533", "run", "2026-10-17T12:00:00Z",
+        [{"namespace": "lakefs://benchmarks", "name": "2/input.parquet",
+          "facets": {"version": {"datasetVersion": old}}},
+         {"namespace": "lakefs://data-raw", "name": "incidence/x.tsv"}],
+        [_ds("Q1792267434533/predictions.tsv")])]}
+    view = l.view(result, DOIP, api_url="https://api.example/")
+    bench, raw = view["steps"][0]["inputs"]
+    assert bench == {"label": "benchmark 2: input.parquet", "url": "https://api.example/ui/benchmarks/2",
+                     "version": "cccccccc", "external": False, "restricted": False}
+    assert raw["label"] == "data-raw: incidence/x.tsv" and raw["url"] is None
+    assert "lakefs://" not in str(view)

@@ -84,7 +84,7 @@ def lineage_view(qid):
         return _json({"error": "lineage service unavailable"}, 502)
     restricted = _restricted(lineage.platform_qids(result, DOIP_NAMESPACE))
     sign = episerve_signed_url if toolkit.current_user.is_authenticated else None
-    return _json(lineage.view(result, DOIP_NAMESPACE, restricted, sign))
+    return _json(lineage.view(result, DOIP_NAMESPACE, restricted, sign, API_PUBLIC_URL))
 
 
 class EPIServeThemePlugin(plugins.SingletonPlugin):

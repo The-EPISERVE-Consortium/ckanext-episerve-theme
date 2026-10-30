@@ -13,6 +13,7 @@ from urllib.parse import urlsplit
 
 _QID = re.compile(r"[Qq]\d{6,}")
 _PLATFORM_FILE = re.compile(r"(Q\d{6,})(?:/(.+))?")
+_OLD_BENCHMARK_FILE = re.compile(r"(\d+)/([^/]+)")   # benchmark files filed under the benchmark id (older layout)
 
 
 def qid_for(pkg: dict) -> str | None:
@@ -51,11 +52,24 @@ def source_name(uri: str) -> str:
     return _SOURCE_NAMES.get(host, host)
 
 
-def _dataset_info(entry: dict, doip_namespace: str) -> dict:
-    """Label, version and file URL of an OpenLineage dataset (the download URL is set in ``view``)."""
+def _dataset_info(entry: dict, doip_namespace: str, api_url: str = "") -> dict:
+    """Label, version and file URL of an OpenLineage dataset (the download URL is set in ``view``).
+
+    Files in lakeFS (``lakefs://<repo>``) are inside the cluster: they are never linked. A benchmark file in
+    the older layout (``lakefs://benchmarks`` + ``<id>/<file>``) links to the benchmark's page on the API.
+    """
     namespace, name = entry.get("namespace", ""), entry.get("name", "")
     facets = entry.get("facets") or {}
     version = ((facets.get("version") or {}).get("datasetVersion")) or ""
+    if namespace.startswith("lakefs://"):
+        repo = namespace[len("lakefs://"):]
+        old = _OLD_BENCHMARK_FILE.fullmatch(name) if repo == "benchmarks" else None
+        if old:
+            page = f"{api_url.rstrip('/')}/ui/benchmarks/{old.group(1)}" if api_url else None
+            return {"key": f"{namespace}|{name}", "label": f"benchmark {old.group(1)}: {old.group(2)}", "qid": None,
+                    "file_url": page, "page": True, "full_version": version, "version": version[:8], "external": False}
+        return {"key": f"{namespace}|{name}", "label": f"{repo}: {name}", "qid": None, "file_url": None,
+                "page": True, "full_version": version, "version": version[:8], "external": False}
     match = _PLATFORM_FILE.fullmatch(name) if namespace == doip_namespace else None
     if match:
         qid, file = match.group(1), match.group(2) or ""
@@ -98,7 +112,7 @@ def _job_info(event: dict) -> dict:
 
 
 def view(result: dict, doip_namespace: str, restricted: set[str] | None = None,
-         sign: Callable[[str], str] | None = None) -> dict:
+         sign: Callable[[str], str] | None = None, api_url: str = "") -> dict:
     """The diagram (Mermaid source) and the steps of an upstream lineage result.
 
     Args:
@@ -106,6 +120,7 @@ def view(result: dict, doip_namespace: str, restricted: set[str] | None = None,
         doip_namespace: The DOIP base URL the API uses as the namespace of platform files.
         restricted: QIDs of restricted datasets: their files are only linked when ``sign`` is given.
         sign: Turns a DOIP URL into a signed link (for a logged-in visitor); None for anonymous visitors.
+        api_url: The API server's public address, for links to benchmark pages.
     """
     restricted = {q.upper() for q in restricted or ()}
 
@@ -114,7 +129,7 @@ def view(result: dict, doip_namespace: str, restricted: set[str] | None = None,
         url = info["file_url"]
         if info["qid"] and info["qid"] in restricted:
             url = sign(url) if sign else None     # sign the plain file URL; the version is added after
-        if url and not info["external"] and info["full_version"]:
+        if url and not info["external"] and not info.get("page") and info["full_version"]:
             url = f"{url}{'&' if '?' in url else '?'}version={info['full_version']}"
         return {"label": info["label"], "url": url, "version": info["version"],
                 "external": info["external"], "restricted": bool(info["qid"] and info["qid"] in restricted)}
@@ -130,7 +145,7 @@ def view(result: dict, doip_namespace: str, restricted: set[str] | None = None,
     steps = []
 
     def node(entry: dict) -> tuple[str, dict]:
-        info = _dataset_info(entry, doip_namespace)
+        info = _dataset_info(entry, doip_namespace, api_url)
         known = nodes.get(info["key"])
         if known is None:
             known = {**info, "id": f"d{len(nodes)}", "versions": []}
