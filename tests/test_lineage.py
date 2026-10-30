@@ -118,3 +118,12 @@ def test_files_inside_the_cluster_are_never_linked():
                      "version": "cccccccc", "external": False, "restricted": False}
     assert raw["label"] == "data-raw: incidence/x.tsv" and raw["url"] is None
     assert "lakefs://" not in str(view)
+
+
+def test_a_file_in_a_folder_shows_its_name_and_links_its_path():
+    result = {"object": "Q1792267434533", "events": [_event(
+        "model-runner/model__prediction__generic__chronos2-small", "Q1792267434533", "run", "2026-10-17T12:00:00Z",
+        [], [_ds("Q1792267434533/output/predictions.tsv")])]}
+    out = l.view(result, DOIP)["steps"][0]["outputs"][0]
+    assert out["label"] == "predictions.tsv"
+    assert out["url"] == f"{DOIP}/doip/retrieve/Q1792267434533/output/predictions.tsv"

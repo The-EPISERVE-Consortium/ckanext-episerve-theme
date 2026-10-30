@@ -74,7 +74,7 @@ def _dataset_info(entry: dict, doip_namespace: str, api_url: str = "") -> dict:
     if match:
         qid, file = match.group(1), match.group(2) or ""
         file_url = f"{doip_namespace}/doip/retrieve/{qid}" + (f"/{file}" if file else "")
-        return {"key": f"{namespace}|{name}", "label": file or qid, "qid": qid, "file_url": file_url,
+        return {"key": f"{namespace}|{name}", "label": file.rsplit("/", 1)[-1] or qid, "qid": qid, "file_url": file_url,
                 "full_version": version, "version": version[:8], "external": False}
     uri = (facets.get("dataSource") or {}).get("uri") or (f"{namespace}/{name}" if "://" in namespace else name)
     return {"key": f"{namespace}|{name}", "label": source_name(uri), "qid": None, "file_url": uri,
