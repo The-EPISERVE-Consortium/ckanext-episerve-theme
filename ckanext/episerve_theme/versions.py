@@ -1,9 +1,10 @@
 """A dataset page at one version: ``/dataset/<qid>?version=<commit>``.
 
 The CKAN entry describes the newest version. For an older version the page takes the metadata from the FDO at
-that lakeFS commit (read through the DOIP server) and points previews and downloads at that commit. The version
-must be one of the object's commits (``/doip/versions/<QID>``); anything else is "not found". Nothing here imports
-CKAN, so it can be tested on its own.
+that lakeFS commit (read through the DOIP server) and points previews and downloads at that commit. Any commit at
+which the object has an FDO is a version: one of the object's own commits (``/doip/versions/<QID>``), or a commit
+of the whole repository that left the object unchanged (a benchmark pins one for all its sources). Anything else
+is "not found". Nothing here imports CKAN, so it can be tested on its own.
 """
 
 import re
@@ -67,12 +68,13 @@ def versioned_pkg(pkg: dict, fdo: dict) -> dict:
     return out
 
 
-def version_view(pkg: dict, requested, fetch_versions: Callable[[str], list | None],
+def version_view(pkg: dict, requested, fetch_newest: Callable[[str], str | None],
                  fetch_fdo: Callable[[str, str], dict | None]) -> dict | None:
     """What the page shows for ``?version=``: None without one, else a dict with ``found``.
 
-    Found: ``commit``, ``short``, ``date`` (of that version), ``latest`` (is it the newest), ``pkg`` (the entry at
-    that version). Not found (not a commit of this object, or its FDO cannot be read): ``requested`` only.
+    Found: ``commit``, ``short``, ``date`` (when that version was made, from its FDO), ``latest`` (the newest
+    commit, or the same content as the entry), ``pkg`` (the entry at that version). Not found (not a full commit
+    ID, or no FDO of this object at that commit): ``requested`` only.
     """
     if requested is None:
         return None
@@ -81,18 +83,16 @@ def version_view(pkg: dict, requested, fetch_versions: Callable[[str], list | No
     commit = valid_commit(requested)
     if not commit or not _QID_NAME.fullmatch(name):
         return not_found
-    versions = fetch_versions(name.upper()) or []
-    entry = next((v for v in versions if v.get("commit_id") == commit), None)
-    if entry is None:
-        return not_found
     fdo = fetch_fdo(name.upper(), commit)
     if not fdo:
         return not_found
+    made = (fdo.get("kernel") or {}).get("modified") or (fdo.get("provenance") or {}).get("prov:generatedAtTime") or ""
+    current = _extras(pkg).get("modified")
     return {
         "found": True,
         "commit": commit,
         "short": commit[:8],
-        "date": (entry.get("timestamp_iso8601") or "")[:16].replace("T", " "),
-        "latest": versions[0].get("commit_id") == commit,
+        "date": made[:16].replace("T", " "),
+        "latest": commit == fetch_newest(name.upper()) or bool(made and made == current),
         "pkg": versioned_pkg(pkg, fdo),
     }

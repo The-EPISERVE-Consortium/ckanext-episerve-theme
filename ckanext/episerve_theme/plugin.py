@@ -56,9 +56,11 @@ def _get_json(url, timeout=15):
         return None
 
 
-def _fetch_versions(qid):
-    body = _get_json(f"{DOIP_INTERNAL_URL}/doip/versions/{qid}")
-    return body.get("versions") if isinstance(body, dict) else None
+def _fetch_newest(qid):
+    """The object's newest commit, or None."""
+    body = _get_json(f"{DOIP_INTERNAL_URL}/doip/versions/{qid}?limit=1")
+    versions = body.get("versions") if isinstance(body, dict) else None
+    return versions[0].get("commit_id") if versions else None
 
 
 def _fetch_fdo(qid, commit):
@@ -76,7 +78,7 @@ def episerve_version(pkg):
     """Template helper: the version the dataset page shows (see versions.version_view); None without ``?version=``."""
     if "version" not in toolkit.request.args:
         return None
-    return versions.version_view(pkg, toolkit.request.args.get("version"), _fetch_versions, _fetch_fdo)
+    return versions.version_view(pkg, toolkit.request.args.get("version"), _fetch_newest, _fetch_fdo)
 
 
 def episerve_file_url(res, pkg):

@@ -13,12 +13,11 @@ PKG = {
 FDO_OLD = {"kernel": {"modified": "2026-10-17T00:00:05Z"},
            "profile": {"display_name": "SARI (old)", "description": "old text", "url": "https://src/old"},
            "provenance": {"source_changed_at": "2026-10-16T08:00:00Z"}}
-VERSIONS = [{"commit_id": NEW, "timestamp_iso8601": "2026-10-30T00:00:07+00:00"},
-            {"commit_id": OLD, "timestamp_iso8601": "2026-10-17T00:00:05+00:00"}]
+REPO_COMMIT = "d" * 64      # a commit of the whole repository that did not touch this object
 
 
-def _view(requested, versions=VERSIONS, fdo=FDO_OLD, pkg=PKG):
-    return v.version_view(pkg, requested, lambda q: versions, lambda q, c: fdo)
+def _view(requested, newest=NEW, fdo=FDO_OLD, pkg=PKG):
+    return v.version_view(pkg, requested, lambda q: newest, lambda q, c: fdo)
 
 
 def test_no_version_parameter_means_the_normal_page():
@@ -28,6 +27,8 @@ def test_no_version_parameter_means_the_normal_page():
 def test_an_older_version_shows_its_own_metadata():
     view = _view(OLD)
     assert view["found"] and view["short"] == "aaaaaaaa" and view["date"] == "2026-10-17 00:00" and not view["latest"]
+    # a commit of the whole repository (as a benchmark pins it) is a version too, dated by the FDO
+    assert _view(REPO_COMMIT)["found"] and _view(REPO_COMMIT)["date"] == "2026-10-17 00:00"
     page = view["pkg"]
     assert (page["title"], page["notes"], page["url"]) == ("SARI (old)", "old text", "https://src/old")
     extras = {e["key"]: e["value"] for e in page["extras"]}
@@ -38,13 +39,15 @@ def test_an_older_version_shows_its_own_metadata():
 
 def test_the_newest_version_is_marked_latest():
     assert _view(NEW)["latest"]
+    # a repository commit with the same content as the entry is the latest too
+    same = {**FDO_OLD, "kernel": {"modified": "2026-10-30T00:00:07Z"}}
+    assert _view(REPO_COMMIT, fdo=same)["latest"]
 
 
 def test_unknown_or_malformed_versions_are_not_found():
-    assert _view("c" * 64) == {"found": False, "requested": "c" * 64}        # not a commit of this object
-    assert _view("abc") == {"found": False, "requested": "abc"}               # not a full commit ID
-    assert _view(OLD, fdo=None)["found"] is False                             # no FDO at that commit
-    assert _view(OLD, versions=None)["found"] is False                        # versions not readable
+    assert _view("c" * 64, fdo=None) == {"found": False, "requested": "c" * 64}   # no FDO at that commit
+    assert _view("abc") == {"found": False, "requested": "abc"}                   # not a full commit ID
+    assert _view(OLD, newest=None)["found"]                                       # newest unknown: still shown
 
 
 def test_runs_and_benchmarks_keep_their_text():
