@@ -34,6 +34,13 @@ LABELS = {
     "status": "Status",
 }
 
+# Labels that depend on the kind of entry: a dataset's ``modified`` is the downloader's nightly check (set on
+# every run, changed or not), a benchmark's is when its files were generated.
+BY_ENTRY_TYPE = {
+    ("modified", "raw-data"): "Last checked",
+    ("modified", "benchmark-data"): "Generated",
+}
+
 ENTRY_TYPES = {
     "raw-data": "Dataset",
     "benchmark-data": "Benchmark data",
@@ -42,10 +49,10 @@ ENTRY_TYPES = {
 }
 
 
-def label(key: str) -> str:
-    """The readable name of an extra."""
+def label(key: str, entry_type: str | None = None) -> str:
+    """The readable name of an extra; ``entry_type`` is the entry's ``dataset_type``."""
     key = key or ""
-    return LABELS.get(key) or key.replace("_", " ").strip().capitalize()
+    return BY_ENTRY_TYPE.get((key, entry_type)) or LABELS.get(key) or key.replace("_", " ").strip().capitalize()
 
 
 def value(key: str, raw):

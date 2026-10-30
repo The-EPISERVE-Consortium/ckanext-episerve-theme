@@ -16,3 +16,10 @@ def test_entry_type_values_in_words():
     assert labels.value("dataset_type", "raw-data") == "Dataset"
     assert labels.value("dataset_type", "something-else") == "something-else"
     assert labels.value("additional_type", "climate") == "climate"
+
+
+def test_modified_is_named_by_entry_type():
+    assert labels.label("modified", "raw-data") == "Last checked"
+    assert labels.label("modified", "benchmark-data") == "Generated"
+    assert labels.label("modified", "model-run") == "Last processed"
+    assert labels.label("modified") == "Last processed"
