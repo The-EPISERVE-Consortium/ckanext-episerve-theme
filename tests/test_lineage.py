@@ -50,6 +50,11 @@ def test_steps_link_to_the_files_and_carry_versions():
                               "url": f"{DOIP}/doip/retrieve/Q3274128860531/GrippeWeb.parquet?version={V}"}]
     assert run["outputs"] == [{"label": "predictions.tsv", "version": "", "external": False, "restricted": False,
                                "url": f"{DOIP}/doip/retrieve/Q1792420591934/predictions.tsv"}]
+    # a download that names the version it produced links that version
+    versioned = {**RESULT, "events": [_event("dataset-downloader/grippeweb", "Q3274128860531", "dataset", "2026-10-19T00:00:00Z",
+                                             [], [_ds("Q3274128860531/GrippeWeb.parquet", V)])]}
+    wrote = l.view(versioned, DOIP)["steps"][0]["outputs"][0]
+    assert wrote["version"] == "93ee770f" and wrote["url"].endswith(f"GrippeWeb.parquet?version={V}")
     assert download["label"] == "download: grippeweb"
     source = download["inputs"][0]
     assert source["external"] and source["label"] == "RKI (GitHub)"

@@ -3,7 +3,7 @@ Lineage tab: where this object comes from (upstream), as a diagram and a list of
 Loaded when the tab is first opened: /lineage-view/<QID> (plugin.py, lineage.py) asks the API server.
 #}
 <div class="epi-lineage" data-qid="{{ qid }}">
-  <p class="epi-api-intro">{{ _('Where this item comes from: the steps that produced it and the files and sources they read, with the version (lakeFS commit) of each platform file. Built from the FAIR Digital Object records. The files link to their download: what a step read in the version it read, what it wrote as it is now.') }}</p>
+  <p class="epi-api-intro">{{ _('Where this item comes from: the steps that produced it and the files and sources they read, with the version (lakeFS commit) of each platform file. Built from the FAIR Digital Object records. The files link to their download in the version shown (@…), otherwise as they are now.') }}</p>
   <div class="epi-lineage-status">{{ _('Loading…') }}</div>
   <div class="epi-lineage-diagram"></div>
   <div class="epi-lineage-steps"></div>

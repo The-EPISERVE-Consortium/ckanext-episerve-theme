@@ -109,14 +109,14 @@ def view(result: dict, doip_namespace: str, restricted: set[str] | None = None,
     """
     restricted = {q.upper() for q in restricted or ()}
 
-    def item(info: dict, read: bool) -> dict:
-        """One file in the table: what it read is linked at the version read, what it wrote as it is."""
+    def item(info: dict) -> dict:
+        """One file in the table, linked at its version when the event names one (else as it is now)."""
         url = info["file_url"]
         if info["qid"] and info["qid"] in restricted:
             url = sign(url) if sign else None     # sign the plain file URL; the version is added after
-        if url and not info["external"] and read and info["full_version"]:
+        if url and not info["external"] and info["full_version"]:
             url = f"{url}{'&' if '?' in url else '?'}version={info['full_version']}"
-        return {"label": info["label"], "url": url, "version": info["version"] if read else "",
+        return {"label": info["label"], "url": url, "version": info["version"],
                 "external": info["external"], "restricted": bool(info["qid"] and info["qid"] in restricted)}
     current = (result.get("object") or "").upper()
     nodes: dict[str, dict] = {}
@@ -150,11 +150,11 @@ def view(result: dict, doip_namespace: str, restricted: set[str] | None = None,
         for entry in event.get("inputs") or []:
             node_id, info = node(entry)
             lines.append(f"{node_id} --> {job_id}")
-            inputs.append(item(info, read=True))
+            inputs.append(item(info))
         for entry in event.get("outputs") or []:
             node_id, info = node(entry)
             lines.append(f"{job_id} --> {node_id}")
-            outputs.append(item(info, read=False))
+            outputs.append(item(info))
         steps.append({**job, "inputs": inputs, "outputs": outputs})
 
     for known in nodes.values():
