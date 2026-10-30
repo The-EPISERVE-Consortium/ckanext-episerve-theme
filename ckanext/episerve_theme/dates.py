@@ -21,3 +21,10 @@ def with_created(pkg: dict) -> dict:
     """The entry with ``metadata_created`` replaced by the object's own creation time when the sync stored one."""
     created = created_for(pkg)
     return {**pkg, "metadata_created": created} if created else pkg
+
+
+def as_datetime(value) -> str | None:
+    """A date-time extra (``2026-10-30T00:00:14Z``, also with fractions of seconds) as CKAN's datetime form, so it
+    is shown like CKAN's own dates; None for anything else."""
+    match = _ISO.fullmatch((value or "").strip()) if isinstance(value, str) else None
+    return f"{match.group(1)}T{match.group(2)}" if match else None

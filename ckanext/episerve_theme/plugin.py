@@ -138,6 +138,7 @@ class EPIServeThemePlugin(plugins.SingletonPlugin):
             "episerve_signed_url": episerve_signed_url,
             "episerve_extra_label": labels.label,
             "episerve_extra_value": labels.value,
+            "episerve_as_datetime": dates.as_datetime,
             "episerve_request_version": episerve_request_version,
             "episerve_version": episerve_version,
             "episerve_file_url": episerve_file_url,
