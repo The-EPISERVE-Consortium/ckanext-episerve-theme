@@ -9,7 +9,7 @@ import ckan.plugins.toolkit as toolkit
 from flask import Blueprint, Response
 from flask import g as flask_g
 
-from ckanext.episerve_theme import dates, lineage, model_card, signing, versions
+from ckanext.episerve_theme import dates, labels, lineage, model_card, signing, versions
 
 
 def episerve_signed_url(url):
@@ -136,6 +136,8 @@ class EPIServeThemePlugin(plugins.SingletonPlugin):
     def get_helpers(self):
         return {
             "episerve_signed_url": episerve_signed_url,
+            "episerve_extra_label": labels.label,
+            "episerve_extra_value": labels.value,
             "episerve_request_version": episerve_request_version,
             "episerve_version": episerve_version,
             "episerve_file_url": episerve_file_url,
