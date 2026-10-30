@@ -56,7 +56,7 @@ def test_steps_link_to_the_files_and_carry_versions():
                                              [], [_ds("Q3274128860531/GrippeWeb.parquet", V)])]}
     wrote = l.view(versioned, DOIP)["steps"][0]["outputs"][0]
     assert wrote["version"] == "93ee770f" and wrote["url"] == f"/dataset/q3274128860531?version={V}"
-    assert download["label"] == "download: grippeweb" and download["url"] == l.DOWNLOADER_CONFIG_URL
+    assert download["label"] == "download: grippeweb" and download["url"] == l.DOWNLOADER_REPO_URL
     source = download["inputs"][0]
     assert source["external"] and source["label"] == "RKI (GitHub)"
     assert source["url"].startswith("https://raw.githubusercontent.com/robert-koch-institut/")
@@ -140,15 +140,15 @@ def test_source_shows_when_it_last_changed():
     assert "Open-Meteo<br/>changed 2026-10-16" in view["mermaid"]
 
 
-def test_download_step_shows_the_display_name_and_links_the_downloader_settings():
+def test_download_step_shows_the_display_name_and_links_the_downloader_repository():
     event = _event("dataset-downloader/corona_incidence_states", "Q1679286399912", "dataset", "2026-10-16T23:00:13Z",
                    [], [_ds("Q1679286399912/covid.parquet")])
     event["run"]["facets"]["episerve"]["display_name"] = "Federal State COVID-19 7-Day Incidence"
     on_run_page = l.view({"object": "Q1792274835520", "events": [event]}, DOIP)["steps"][0]
     assert on_run_page["label"] == "download: Federal State COVID-19 7-Day Incidence"
-    assert on_run_page["url"].startswith("https://github.com/The-EPISERVE-Consortium/workflow-prefect__dataset-downloader/")
-    # on the dataset's own page too: the settings are new information there
-    assert l.view({"object": "Q1679286399912", "events": [event]}, DOIP)["steps"][0]["url"] == l.DOWNLOADER_CONFIG_URL
+    assert on_run_page["url"] == "https://github.com/The-EPISERVE-Consortium/workflow-prefect__dataset-downloader"
+    # on the dataset's own page too: the repository is new information there
+    assert l.view({"object": "Q1679286399912", "events": [event]}, DOIP)["steps"][0]["url"] == l.DOWNLOADER_REPO_URL
 
 
 def test_steps_of_other_objects_keep_their_link():

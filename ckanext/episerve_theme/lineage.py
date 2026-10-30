@@ -53,9 +53,8 @@ def _wrap(text: str, width: int = 26) -> str:
     return "<br/>".join(_label(_short(l, width + 6)) for l in lines[:4])
 
 
-# What a download step links to: the downloader's list of datasets (source URL and settings of each).
-DOWNLOADER_CONFIG_URL = ("https://github.com/The-EPISERVE-Consortium/workflow-prefect__dataset-downloader"
-                         "/blob/main/deploy/datasets.yaml")
+# What a download step links to: the repository of the dataset downloader (Prefect workflow).
+DOWNLOADER_REPO_URL = "https://github.com/The-EPISERVE-Consortium/workflow-prefect__dataset-downloader"
 
 _SOURCE_NAMES = {"robert-koch-institut": "RKI", "api.open-meteo.com": "Open-Meteo",
                  "xmart-api-public.who.int": "WHO"}
@@ -117,8 +116,8 @@ def _job_info(event: dict) -> dict:
         label = f"download: {facet.get('display_name') or rest}"
     else:
         label = job
-    # a download links to the downloader's settings for the dataset; its files link to the dataset's page
-    url = DOWNLOADER_CONFIG_URL if group == "dataset-downloader" else (f"/dataset/{qid.lower()}" if qid else None)
+    # a download links to the downloader's repository; its files link to the dataset's page
+    url = DOWNLOADER_REPO_URL if group == "dataset-downloader" else (f"/dataset/{qid.lower()}" if qid else None)
     return {"label": label, "kind": kind, "time": when, "qid": qid, "source_changed": changed, "url": url}
 
 
