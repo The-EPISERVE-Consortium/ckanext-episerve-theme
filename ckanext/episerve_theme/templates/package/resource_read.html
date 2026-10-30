@@ -1,6 +1,26 @@
 {% ckan_extends %}
 
-{# Download button and URL line use a signed link for logged-in users (restricted DOIP files). #}
+{# Download button and URL line use a signed link for logged-in users (restricted DOIP files).
+   At ?version=<commit> the page shows the same banner as the dataset page; an unknown version only the note. #}
+{% block resource %}
+  {% set ver = h.episerve_version(pkg) %}
+  {% if ver and not ver.found %}
+    <section class="module module-resource" role="complementary">
+      <div class="module-content">
+        <h1 class="page-heading">{{ h.resource_display_name(res) | truncate(50) }}</h1>
+        {% snippet "package/snippets/version_banner.html", ver=ver,
+           latest_url=h.url_for(pkg.type ~ '_resource.read', id=pkg.name, resource_id=res.id) %}
+      </div>
+    </section>
+  {% else %}
+    {{ super() }}
+  {% endif %}
+{% endblock %}
+
+{% block primary_content %}
+  {% set ver = h.episerve_version(pkg) %}
+  {% if not ver or ver.found %}{{ super() }}{% endif %}
+{% endblock %}
 {% block resource_actions_inner %}
   {% block action_manage %}
     {% if h.check_access('package_update', {'id':pkg.id }) %}
@@ -32,9 +52,10 @@
 {% block resource_read_url %}
   {% if res.url and h.is_url(res.url) %}
     {% set file_url = h.episerve_file_url(res, pkg) %}
-    {% if h.episerve_request_version() %}
-    <p class="epi-version-banner">{{ _('Version') }} <span class="epi-card-hint">@{{ h.episerve_request_version()[:8] }}</span> &middot;
-      <a href="{{ h.url_for(pkg.type ~ '_resource.read', id=pkg.name, resource_id=res.id) }}">{{ _('Show the latest version') }}</a></p>
+    {% set ver = h.episerve_version(pkg) %}
+    {% if ver %}
+    {% snippet "package/snippets/version_banner.html", ver=ver,
+       latest_url=h.url_for(pkg.type ~ '_resource.read', id=pkg.name, resource_id=res.id) %}
     {% endif %}
     <p class="text-muted ellipsis">{{ _('URL:') }} <a class="resource-url-analytics" href="{{ file_url }}" title="{{ file_url }}">{{ file_url }}</a></p>
   {% elif res.url %}

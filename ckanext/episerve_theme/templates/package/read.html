@@ -12,10 +12,7 @@
 <div class="primary col-12" role="main">
   <div class="epi-ds-header">
     <h1 class="epi-ds-title">{{ h.dataset_display_name(pkg) }}</h1>
-    <div class="epi-version-banner epi-version-missing">
-      {{ _('Version %(v)s not found.', v=ver.requested) }}
-      <a href="{{ h.url_for(pkg.type ~ '.read', id=pkg.name) }}">{{ _('Show the latest version') }}</a>
-    </div>
+    {% snippet "package/snippets/version_banner.html", ver=ver, latest_url=h.url_for(pkg.type ~ '.read', id=pkg.name) %}
   </div>
 </div>
 {% else %}
@@ -38,14 +35,7 @@
   {# Upper card: title + description #}
   <div class="epi-ds-header">
     {% if ver %}
-    <div class="epi-version-banner">
-      {{ _('Version of %(d)s UTC', d=ver.date) }} <span class="epi-card-hint">@{{ ver.short }}</span> &middot;
-      {% if ver.latest %}
-        {{ _('This is the latest version.') }}
-      {% else %}
-        <a href="{{ h.url_for(pkg.type ~ '.read', id=pkg.name) }}">{{ _('Show the latest version') }}</a>
-      {% endif %}
-    </div>
+    {% snippet "package/snippets/version_banner.html", ver=ver, latest_url=h.url_for(pkg.type ~ '.read', id=pkg.name) %}
     {% endif %}
     <h1 class="epi-ds-title">
       {{ h.dataset_display_name(pkg) }}

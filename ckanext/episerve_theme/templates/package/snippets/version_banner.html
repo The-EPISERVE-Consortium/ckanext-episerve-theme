@@ -1,0 +1,21 @@
+{#
+The banner of a page at a version (?version=<commit>), the same on the dataset page and the resource pages.
+
+ver        - h.episerve_version(pkg): found (date, short, latest) or not found (requested)
+latest_url - the page without the version
+#}
+{% if ver.found %}
+<div class="epi-version-banner">
+  {{ _('Version of %(d)s UTC', d=ver.date) }} <span class="epi-card-hint">@{{ ver.short }}</span> &middot;
+  {% if ver.latest %}
+    {{ _('This is the latest version.') }}
+  {% else %}
+    <a href="{{ latest_url }}">{{ _('Show the latest version') }}</a>
+  {% endif %}
+</div>
+{% else %}
+<div class="epi-version-banner epi-version-missing">
+  {{ _('Version %(v)s not found.', v=ver.requested) }}
+  <a href="{{ latest_url }}">{{ _('Show the latest version') }}</a>
+</div>
+{% endif %}

@@ -7,6 +7,7 @@ import urllib.request
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from flask import Blueprint, Response
+from flask import g as flask_g
 
 from ckanext.episerve_theme import dates, lineage, model_card, signing, versions
 
@@ -78,7 +79,14 @@ def episerve_version(pkg):
     """Template helper: the version the dataset page shows (see versions.version_view); None without ``?version=``."""
     if "version" not in toolkit.request.args:
         return None
-    return versions.version_view(pkg, toolkit.request.args.get("version"), _fetch_newest, _fetch_fdo)
+    # asked several times per page (banner, blocks): read DOIP once per request
+    cache = getattr(flask_g, "episerve_versions", None)
+    if cache is None:
+        cache = flask_g.episerve_versions = {}
+    key = (pkg.get("name"), toolkit.request.args.get("version"))
+    if key not in cache:
+        cache[key] = versions.version_view(pkg, key[1], _fetch_newest, _fetch_fdo)
+    return cache[key]
 
 
 def episerve_file_url(res, pkg):
