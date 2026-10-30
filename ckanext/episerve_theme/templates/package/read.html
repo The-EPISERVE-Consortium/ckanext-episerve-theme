@@ -85,7 +85,8 @@
       </div>
       {% endif %}
       <div class="epi-pane" id="tab-info"{% if first_tab != 'info' %} style="display:none"{% endif %}>
-        {% snippet "package/snippets/additional_info.html", pkg_dict=pkg %}
+        {# "Created" = when the object was made (extra created from the FDO), not when the entry was (re)created #}
+        {% snippet "package/snippets/additional_info.html", pkg_dict=h.episerve_with_created(pkg) %}
       </div>
       {% if lineage_qid %}
       <div class="epi-pane" id="tab-lineage" style="display:none">

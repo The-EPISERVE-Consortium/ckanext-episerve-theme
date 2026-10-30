@@ -8,7 +8,7 @@ import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from flask import Blueprint, Response
 
-from ckanext.episerve_theme import lineage, model_card, signing
+from ckanext.episerve_theme import dates, lineage, model_card, signing
 
 
 def episerve_signed_url(url):
@@ -98,6 +98,7 @@ class EPIServeThemePlugin(plugins.SingletonPlugin):
             "episerve_model_card": model_card.model_card,
             "episerve_is_card_extra": lambda key: key in model_card.CARD_EXTRAS,
             "episerve_lineage_qid": lineage.qid_for,
+            "episerve_with_created": dates.with_created,
             "episerve_lineage_api_url": lambda qid: f"{API_PUBLIC_URL.rstrip('/')}/lineage/events?object={qid}",
         }
 
