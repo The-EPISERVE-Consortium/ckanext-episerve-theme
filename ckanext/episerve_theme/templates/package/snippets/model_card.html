@@ -4,7 +4,7 @@ Model card tab of a model entry. `card` is h.episerve_model_card(pkg.extras)
 #}
 <div class="epi-card">
 
-  <div class="epi-card-status">
+  <section class="epi-card-panel epi-card-status"><h3>{{ _('Status & Warnings') }}</h3><div class="epi-model-status-row"><div class="epi-model-validity">
     {% if card.valid is sameas true %}
       <span class="epi-card-badge epi-card-badge-ok"><i class="fa fa-check"></i> {{ _('Model card valid') }}</span>
     {% elif card.valid is sameas false %}
@@ -12,35 +12,39 @@ Model card tab of a model entry. `card` is h.episerve_model_card(pkg.extras)
     {% else %}
       <span class="epi-card-badge">{{ _('Model card not checked') }}</span>
     {% endif %}
+    </div>
     {% if card.errors or card.warnings %}
     <ul class="epi-card-issues">
       {% for i in card.errors %}
-      <li class="epi-card-issue-error"><b>{{ _('Error') }}</b>{% if i.path %} <code>{{ i.path }}</code>{% endif %}: {{ i.message }}</li>
+      <li class="epi-card-issue-error"><i class="fa fa-exclamation-circle" aria-hidden="true"></i> <b>{{ _('Error') }}</b>{% if i.path %} <code>{{ i.path }}</code>{% endif %}: {{ i.message }}</li>
       {% endfor %}
       {% for i in card.warnings %}
       <li class="epi-card-issue-warning"><b>{{ _('Warning') }}</b>{% if i.path %} <code>{{ i.path }}</code>{% endif %}: {{ i.message }}</li>
       {% endfor %}
     </ul>
     {% endif %}
-  </div>
+  </div></section>
 
   {% if card.documentation or card.references %}
-  <h3 class="epi-license-h">{{ _('Documentation') }}</h3>
-  <dl class="epi-card-dl">
+  <section class="epi-card-panel"><h3>{{ _('Documentation') }}</h3>
+  <div class="epi-card-scroll"><table class="epi-card-table epi-model-documentation">
+    <thead><tr><th scope="col">{{ _('Field') }}</th><th scope="col">{{ _('Value') }}</th></tr></thead>
+    <tbody>
     {% for label, value in card.documentation %}
-    <dt>{{ _(label) }}</dt><dd>{{ value }}</dd>
+    <tr><th scope="row">{{ _(label) }}</th><td>{{ value }}</td></tr>
     {% endfor %}
     {% if card.references %}
-    <dt>{{ _('References') }}</dt>
-    <dd>{% for r in card.references %}{% if r.startswith('http://') or r.startswith('https://') %}<a href="{{ r }}" target="_blank" rel="noopener">{{ r }}</a>{% else %}{{ r }}{% endif %}{% if not loop.last %}<br>{% endif %}{% endfor %}</dd>
+    <tr><th scope="row">{{ _('References') }}</th>
+    <td>{% for r in card.references %}{% if r.startswith('http://') or r.startswith('https://') %}<a href="{{ r }}" target="_blank" rel="noopener">{{ r }}</a>{% else %}{{ r }}{% endif %}{% if not loop.last %}<br>{% endif %}{% endfor %}</td></tr>
     {% endif %}
-  </dl>
+    </tbody>
+  </table></div></section>
   {% endif %}
 
-  <h3 class="epi-license-h">{{ _('Parameters') }} <span class="epi-card-hint">({{ _('keys of config.json') }})</span></h3>
+  <section class="epi-card-panel"><h3>{{ _('Parameters') }} <span class="epi-card-hint">({{ _('keys of config.json') }})</span></h3>
   {% if card.parameters %}
   <div class="epi-card-scroll">
-  <table class="epi-card-table">
+  <table class="epi-card-table epi-model-parameters">
     <thead><tr><th>{{ _('Name') }}</th><th>{{ _('Type') }}</th><th>{{ _('Default') }}</th><th>{{ _('Range') }}</th><th>{{ _('Description') }}</th></tr></thead>
     <tbody>
     {% for p in card.parameters %}
@@ -59,15 +63,16 @@ Model card tab of a model entry. `card` is h.episerve_model_card(pkg.extras)
   <p class="epi-license-p">{{ _('The model card declares no parameters.') }}</p>
   {% endif %}
   {% if card.unknown_keys_rejected or card.rules %}
-  <ul class="epi-card-notes">
+  <div class="epi-model-rules"><i class="fa fa-info-circle" aria-hidden="true"></i><ul class="epi-card-notes">
     {% if card.unknown_keys_rejected %}<li>{{ _('Keys not listed here are rejected.') }}</li>{% endif %}
     {% for r in card.rules %}<li>{{ r }}</li>{% endfor %}
-  </ul>
+  </ul></div>
   {% endif %}
+  </section>
 
   {% for title, files, role_header in [(_('Input'), card.inputs, _('Used as')), (_('Output'), card.outputs, _('Content'))] %}
   {% if files %}
-  <h3 class="epi-license-h">{{ title }}</h3>
+  <section class="epi-card-panel epi-model-{{ 'input' if loop.first else 'output' }}"><h3>{{ title }}</h3>
   {% for f in files %}
   <div class="epi-card-file">
     <p class="epi-license-p"><code>{{ f.file }}</code>{% if f.format %} <span class="epi-card-hint">{{ f.format }}</span>{% endif %}{% if f.notes %} <span class="epi-card-hint">&middot; {{ f.notes }}</span>{% endif %}</p>
@@ -91,16 +96,20 @@ Model card tab of a model entry. `card` is h.episerve_model_card(pkg.extras)
     {% endif %}
   </div>
   {% endfor %}
+  </section>
   {% endif %}
   {% endfor %}
 
   {% if card.resources %}
-  <h3 class="epi-license-h">{{ _('Resources') }}</h3>
-  <dl class="epi-card-dl">
+  <section class="epi-card-panel epi-model-resources"><h3>{{ _('Resources') }}</h3>
+  <div class="epi-card-scroll"><table class="epi-card-table epi-model-documentation">
+    <thead><tr><th scope="col">{{ _('Field') }}</th><th scope="col">{{ _('Value') }}</th></tr></thead>
+    <tbody>
     {% for label, value in card.resources %}
-    <dt>{{ _(label) }}</dt><dd>{{ value }}</dd>
+    <tr><th scope="row">{{ _(label) }}</th><td>{{ value }}</td></tr>
     {% endfor %}
-  </dl>
+    </tbody>
+  </table></div></section>
   {% endif %}
 
 </div>

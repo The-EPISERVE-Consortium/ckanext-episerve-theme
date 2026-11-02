@@ -24,7 +24,7 @@
 {% set first_tab = 'card' if card else ('resources' if not hide_files else 'info') %}
 {# Datasets, benchmark files and model runs get a "Lineage" tab (where the item comes from); models do not. #}
 {% set lineage_qid = h.episerve_lineage_qid(pkg) %}
-<div class="primary col-12" role="main">
+<div class="primary col-12{% if card %} epi-model-page{% endif %}" role="main">
 
   {% if h.check_access('package_update', {'id': pkg.id }) %}
   <div class="mb-2 text-end">
@@ -34,6 +34,14 @@
 
   {# Upper card: title + description #}
   <div class="epi-ds-header">
+    {% if card %}
+    <svg class="epi-model-forecast" viewBox="0 0 320 140" fill="none" aria-hidden="true" focusable="false">
+      <path d="M175 91 C202 57 208 69 232 39 S269 35 298 12 L298 128 C269 119 257 129 232 114 S201 110 175 91Z" fill="#dfebfd"/>
+      <path d="M175 91 C204 64 212 85 237 62 S271 63 298 45 L298 108 C273 99 261 111 237 96 S203 102 175 91Z" fill="#c9ddfa"/>
+      <path d="M8 124 C20 104 28 125 40 105 S55 111 65 88 S83 103 95 72 S111 77 123 84 S139 51 151 68 S164 99 175 91" stroke="#7e98cf" stroke-width="2"/>
+      <path d="M175 91 C191 83 199 77 212 79 S232 82 244 69 S263 68 274 72 S287 73 298 68" stroke="#1559d6" stroke-width="2.5"/>
+    </svg>
+    {% endif %}
     {% if ver %}
     {% snippet "package/snippets/version_banner.html", ver=ver, latest_url=h.url_for(pkg.type ~ '.read', id=pkg.name) %}
     {% endif %}
@@ -158,7 +166,7 @@ curl -o "{{ res.name }}" "{{ file_url }}{{ '&' if '?' in file_url else '?' }}siz
       {% endif %}
       <div class="epi-pane" id="tab-license" style="display:none">
         <div class="epi-license-section">
-          <h3 class="epi-license-h">{{ _('License') }}</h3>
+          <h3 class="epi-license-h">{{ _('Available License') }}</h3>
           <p class="epi-license-p" property="dc:rights">
             {% if pkg.license_id and pkg.license_id != 'notspecified' %}
               {% if pkg.license_url %}
