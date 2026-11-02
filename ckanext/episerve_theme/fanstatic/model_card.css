@@ -125,3 +125,18 @@
 .epi-model-page .epi-model-documentation th:first-child { width:22% !important; }
 .epi-model-page .epi-model-documentation th:nth-child(2) { width:auto !important; }
 .epi-model-page .epi-card-table code { background:transparent; }
+
+/* Section labels match the navy labels used in API Access. */
+.epi-model-page .epi-card-panel:not(.epi-card-status) { padding:.65rem .85rem .85rem; }
+.epi-model-page .epi-card-panel:not(.epi-card-status) > h3 {
+ display:table; width:auto; max-width:100%; box-sizing:border-box;
+ background:var(--epi-navy); color:#fff;
+ font-size:.7rem; font-weight:700; line-height:1.45; letter-spacing:.04em;
+ text-transform:uppercase; padding:.22rem .75rem;
+ border-radius:.3rem .3rem 0 0; margin:0 0 .15rem;
+}
+.epi-model-page .epi-card-panel:not(.epi-card-status) > h3 .epi-card-hint { color:inherit; font-weight:inherit; }
+.epi-model-page .epi-card-panel:not(.epi-card-status) .epi-card-scroll { border-radius:.3rem; }
+.epi-model-page .epi-card-panel:not(.epi-card-status) .epi-card-file { padding-top:.1rem; }
+.epi-model-page .epi-card-panel:not(.epi-card-status) .epi-card-file > .epi-license-p { padding:0 .75rem; }
+.epi-model-page .epi-model-rules { padding:.3rem .65rem; margin-top:.4rem; }
