@@ -16,3 +16,6 @@
 .epi-forecast-table th,.epi-forecast-table td { padding:.35rem .5rem; border:1px solid #d5dce6; white-space:nowrap; }
 .epi-forecast-source { overflow-wrap:anywhere; }
 @media(max-width:600px) { .epi-forecast-panel { padding:.65rem; } .epi-forecast-controls label { flex-wrap:wrap; } }
+
+.epi-forecast-legend { font-size:.85rem; color:#334155; margin:.5rem 0; }
+.epi-forecast-content h4 { font-size:.95rem; color:var(--epi-navy,#1e3a5f); margin:1rem 0 .3rem; }

@@ -36,10 +36,121 @@
     });
   }
 
+  /** Parse only explicit calendar dates and ISO weeks, preserving their meaning. */
+  function calendar(value) {
+    var text = String(value), week = /^(\d{4})-W(\d{2})$/.exec(text);
+    if (week) {
+      var number = Number(week[2]);
+      if (number < 1 || number > 53) return null;
+      var january = new Date(Date.UTC(Number(week[1]), 0, 4));
+      return january.getTime() - ((january.getUTCDay() + 6) % 7) * 86400000 + (number - 1) * 604800000;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}(?:[T ].*)?$/.test(text)) return null;
+    var normalized = text.replace(' ', 'T');
+    if (normalized.length > 10 && !/(Z|[+-]\d{2}:?\d{2})$/.test(normalized)) normalized += 'Z';
+    var timestamp = Date.parse(normalized);
+    return Number.isFinite(timestamp) ? timestamp : null;
+  }
+
+  /** Align one supplied series with its predictions without inferring model usage. */
+  function combine(input, forecast) {
+    var inputs = input ? input.points : [], outputs = forecast ? forecast.points : [];
+    var allDates = inputs.concat(outputs).every(function (point) { return calendar(point.x) !== null; });
+    var positional = input && forecast && forecast.position_axis && input.row_positions;
+    var allNumeric = inputs.concat(outputs).every(function (point) { return point.x !== '' && Number.isFinite(Number(point.x)); });
+    var sameAxis = !input || !forecast || input.axis === forecast.axis;
+    var sharedCategories = input && forecast && inputs.some(function (point) {
+      return outputs.some(function (other) { return point.x === other.x; });
+    });
+    var unaligned = Boolean(input && forecast && !allDates && !positional && !(allNumeric && sameAxis) && !(sameAxis && sharedCategories));
+    var byKey = new Map(), sequence = 0;
+
+    /** Add one source's observations to a shared coordinate map. */
+    function add(points, history) {
+      points.forEach(function (point, index) {
+        var metric = allDates ? calendar(point.x) : (positional ? (history ? input.row_positions[index] : Number(point.x)) : (allNumeric ? Number(point.x) : null));
+        var key = metric === null ? String(point.x) : String(metric);
+        var merged = byKey.get(key);
+        if (!merged) {
+          merged = {x: allDates ? new Date(metric).toISOString().replace(/T00:00:00\.000Z$/, '') : (positional ? String(metric) : String(point.x)),
+                    axis_value: metric === null ? sequence++ : metric};
+          byKey.set(key, merged);
+        }
+        if (history) { merged.history = point.value; merged.input_x = point.x; }
+        else { merged.value = point.value; merged.q10 = point.q10; merged.q90 = point.q90; }
+      });
+    }
+    add(inputs, true); add(outputs, false);
+    var points = Array.from(byKey.values()).sort(function (a, b) { return a.axis_value - b.axis_value; });
+    var first = points.findIndex(function (point) { return Object.prototype.hasOwnProperty.call(point, 'value'); });
+    var last = points.length - 1;
+    while (last > first && !Object.prototype.hasOwnProperty.call(points[last], 'value')) last--;
+    var viewStart = Math.max(0, first - Math.max(20, outputs.length * 4));
+    var viewEnd = Math.max(viewStart + 2, last + 1);
+    return {column: forecast ? forecast.column : input.column, label: forecast ? forecast.label : input.label,
+            axis: allDates ? 'Date' : (positional ? 'Input row position' : (forecast ? forecast.axis : input.axis)),
+            points: points, input_rows: input ? input.rows : 0, forecast_rows: forecast ? forecast.rows : 0,
+            sampled: Boolean(input && input.sampled || forecast && forecast.sampled),
+            duplicate_x: Boolean(input && input.duplicate_x || forecast && forecast.duplicate_x), unaligned: unaligned,
+            initial_zoom: Math.min(100, Math.max(1, Math.ceil((viewEnd - viewStart) / Math.max(1, points.length) * 100))),
+            initial_position: Math.round(viewStart / Math.max(1, points.length - (viewEnd - viewStart)) * 100)};
+  }
+
+  /** Offer compatible input and prediction series together in one chart. */
+  function combinedChart(parent, result) {
+    var choices = [];
+    result.inputs.forEach(function (input) {
+      input.series.forEach(function (series) { choices.push({series:series, filename:input.filename}); });
+    });
+    var controls = el('div', null, parent, 'epi-forecast-controls');
+    var forecastLabel = el('label', 'Prediction series', controls, 'epi-forecast-series');
+    var forecasts = el('select', null, forecastLabel);
+    forecasts.setAttribute('aria-label', 'Prediction series');
+    result.predictions.forEach(function (series, index) { var option = el('option', series.label, forecasts); option.value = index; });
+    var inputLabel = el('label', 'Input supplied series', controls, 'epi-forecast-series');
+    var inputSelect = el('select', null, inputLabel);
+    inputSelect.setAttribute('aria-label', 'Input supplied series');
+    var host = el('div', null, parent), selectedInputs = [];
+
+    /** Replace the graph after a series choice while releasing old observers. */
+    function render() {
+      state.observers.forEach(function (observer) { observer.disconnect(); }); state.observers = [];
+      host.replaceChildren();
+      var input = selectedInputs[Number(inputSelect.value)];
+      var forecast = result.predictions[Number(forecasts.value)];
+      var merged = input || forecast ? [combine(input && input.series, forecast)] : [];
+      chart(host, 'Input supplied & recorded predictions', merged, null, true);
+    }
+
+    /** Match target columns and retain explicit categorical input choices. */
+    function chooseInputs() {
+      var forecast = result.predictions[Number(forecasts.value)];
+      selectedInputs = choices.filter(function (choice) { return !forecast || choice.series.column === forecast.column; });
+      inputSelect.replaceChildren();
+      selectedInputs.forEach(function (choice, index) {
+        var option = el('option', choice.series.label + ' · ' + choice.filename, inputSelect); option.value = index;
+      });
+      if (!selectedInputs.length) { var option = el('option', 'No matching supplied input series', inputSelect); option.value = '-1'; }
+      inputSelect.disabled = !selectedInputs.length;
+      if (forecast) {
+        var matching = selectedInputs.findIndex(function (choice) {
+          return Object.keys(forecast.groups).every(function (key) { return choice.series.groups[key] === forecast.groups[key]; });
+        });
+        if (matching >= 0) inputSelect.value = matching;
+      }
+      render();
+    }
+    inputSelect.addEventListener('change', render);
+    forecasts.addEventListener('change', chooseInputs);
+    forecasts.disabled = !result.predictions.length;
+    chooseInputs();
+  }
+
   /** Render a selectable series with zoom, position controls, and pointer values. */
   function chart(parent, title, allSeries, table, forecast, preferredColumn) {
     var panel = el('section', null, parent, 'epi-forecast-panel');
     el('h3', title, panel);
+    el('p', 'Black: input supplied · Red: recorded predictions · Shading: reported q10–q90', panel, 'epi-forecast-legend');
     if (!allSeries.length) {
       el('p', 'A reliable chart mapping is unavailable. Inspect the recorded data below.', panel, 'epi-forecast-note');
       tablePreview(panel, table);
@@ -50,13 +161,14 @@
     var select = el('select', null, label);
     select.setAttribute('aria-label', title + ' series');
     allSeries.forEach(function (series, index) { var option = el('option', series.label, select); option.value = index; });
+    if (allSeries.length === 1) label.style.display = 'none';
     var preferred = allSeries.findIndex(function (series) { return series.column === preferredColumn; });
     if (preferred >= 0) select.value = preferred;
     var zoomLabel = el('label', 'Visible range', controls), zoom = el('input', null, zoomLabel);
-    zoom.type = 'range'; zoom.min = '5'; zoom.max = '100'; zoom.value = '100';
+    zoom.type = 'range'; zoom.min = '1'; zoom.max = '100'; zoom.value = String(allSeries[0].initial_zoom || 100);
     zoom.setAttribute('aria-label', title + ' visible range');
     var positionLabel = el('label', 'Position', controls), position = el('input', null, positionLabel);
-    position.type = 'range'; position.min = '0'; position.max = '100'; position.value = '100';
+    position.type = 'range'; position.min = '0'; position.max = '100'; position.value = String(Math.min(100, allSeries[0].initial_position || 0));
     position.setAttribute('aria-label', title + ' position');
     var note = el('p', '', panel, 'epi-forecast-note');
     var host = el('div', null, panel, 'epi-forecast-chart');
@@ -68,6 +180,10 @@
       host.replaceChildren();
       var series = allSeries[Number(select.value)], original = series.points;
       position.disabled = zoom.value === '100';
+      if (series.unaligned) {
+        note.textContent = 'These recorded axes cannot be aligned reliably without guessing. Input and predictions remain available in the data tables below.';
+        return;
+      }
       if (series.duplicate_x) {
         note.textContent = 'Repeated axis values make a single line ambiguous. Use the series selector or data table.';
         return;
@@ -75,13 +191,13 @@
       var count = Math.max(2, Math.ceil(original.length * Number(zoom.value) / 100));
       var start = Math.round(Math.max(0, original.length - count) * Number(position.value) / 100);
       var points = original.slice(start, start + count);
-      note.textContent = series.axis + ' · ' + series.rows + ' recorded rows' +
-        (series.sampled ? ' · evenly spaced display sample of ' + original.length + ' points' : '') +
-        '. Rows retain their recorded order; input and forecast axes are shown separately.';
+      note.textContent = series.axis + ' · ' + series.input_rows + ' supplied rows · ' + series.forecast_rows + ' predictions' +
+        (series.sampled ? ' · input display is sampled; zoom changes the visible range' : '') +
+        '. Input supplied does not imply every observation was used internally.';
       if (!points.length) { note.textContent = 'No values available.'; return; }
       var values = [];
       points.forEach(function (point) {
-        ['value', 'q10', 'q90'].forEach(function (key) { if (Number.isFinite(point[key])) values.push(point[key]); });
+        ['history', 'value', 'q10', 'q90'].forEach(function (key) { if (Number.isFinite(point[key])) values.push(point[key]); });
       });
       if (!values.length) { note.textContent += ' No finite values are available.'; return; }
       var width = Math.max(280, host.clientWidth), height = 280;
@@ -93,7 +209,10 @@
       svgEl('title', {}, svg, title + ': ' + series.label);
 
       /** Map a recorded row index to a plot coordinate. */
-      function x(index) { return left + (right - left) * index / Math.max(1, points.length - 1); }
+      function x(index) {
+        var first = points[0].axis_value, span = points[points.length - 1].axis_value - first;
+        return left + (right - left) * (span ? (points[index].axis_value - first) / span : 0.5);
+      }
       /** Map a finite numeric value to a plot coordinate. */
       function y(value) { return bottom - (bottom - top) * (value - low) / (high - low); }
       for (var tick = 0; tick <= 4; tick++) {
@@ -117,25 +236,38 @@
       points.forEach(function (point, index) {
         if (Number.isFinite(point.q10) && Number.isFinite(point.q90) && point.q10 <= point.q90) {
           band.push({index:index, q10:point.q10, q90:point.q90});
-        } else flushBand();
+        } else if (Object.prototype.hasOwnProperty.call(point, 'value')) flushBand();
       });
       flushBand();
-      var path = '', connected = false;
-      points.forEach(function (point, index) {
-        if (!Number.isFinite(point.value)) { connected = false; return; }
-        path += (connected ? 'L' : 'M') + x(index) + ',' + y(point.value) + ' ';
-        connected = true;
-        if (points.length <= 60) svgEl('circle', {cx:x(index), cy:y(point.value), r:2.5, fill:forecast ? '#c62828' : '#111827'}, svg);
+      [['history', '#111827'], ['value', '#c62828']].forEach(function (line) {
+        var path = '', connected = false;
+        points.forEach(function (point, index) {
+          if (!Object.prototype.hasOwnProperty.call(point, line[0])) return;
+          var value = point[line[0]];
+          if (!Number.isFinite(value)) { connected = false; return; }
+          path += (connected ? 'L' : 'M') + x(index) + ',' + y(value) + ' '; connected = true;
+          if (points.length <= 80 || line[0] === 'value') svgEl('circle', {cx:x(index), cy:y(value), r:2.5, fill:line[1]}, svg);
+        });
+        svgEl('path', {d:path, fill:'none', stroke:line[1], 'stroke-width':2, 'data-series':line[0]}, svg);
       });
-      svgEl('path', {d:path, fill:'none', stroke:forecast ? '#c62828' : '#111827', 'stroke-width':2}, svg);
+      var boundary = points.findIndex(function (point) { return Object.prototype.hasOwnProperty.call(point, 'value'); });
+      if (boundary >= 0) {
+        svgEl('line', {x1:x(boundary), x2:x(boundary), y1:top, y2:bottom, stroke:'#64748b', 'stroke-dasharray':'4 4'}, svg);
+      }
       if (forecast && points.some(function (point) { return Number.isFinite(point.q10) && Number.isFinite(point.q90); })) {
         svgEl('text', {x:left, y:height - 12, fill:'#52657d', 'font-size':11}, svg, 'Shading: reported q10–q90');
       }
       svg.addEventListener('pointermove', function (event) {
         var bounds = svg.getBoundingClientRect(), px = (event.clientX - bounds.left) * width / bounds.width;
-        var index = Math.max(0, Math.min(points.length - 1, Math.round((px - left) / (right - left) * (points.length - 1))));
+        var index = 0, distance = Infinity;
+        points.forEach(function (point, candidate) {
+          var gap = Math.abs(x(candidate) - px); if (gap < distance) { index = candidate; distance = gap; }
+        });
         var point = points[index];
-        tooltip.textContent = point.x + ' · ' + series.column + ': ' + (point.value === null ? 'missing' : point.value) +
+        tooltip.textContent = point.x + ' · ' + series.column +
+          (Object.prototype.hasOwnProperty.call(point, 'history') ? ' · input supplied: ' + (point.history === null ? 'missing' : point.history) : '') +
+          (point.input_x && point.input_x !== point.x ? ' (' + point.input_x + ')' : '') +
+          (Object.prototype.hasOwnProperty.call(point, 'value') ? ' · prediction: ' + (point.value === null ? 'missing' : point.value) : '') +
           (forecast && Number.isFinite(point.q10) && Number.isFinite(point.q90) ? ' · reported q10: ' + point.q10 + ', q90: ' + point.q90 : '');
       });
     }
@@ -168,18 +300,21 @@
       content.replaceChildren();
       status.textContent = 'Run artifact version ' + result.artifact_commit.slice(0, 12) + ' · ' + (result.cached ? 'Saved preview' : 'Preview prepared');
       result.warnings.forEach(function (message) { el('p', message, content, 'epi-forecast-note'); });
+      combinedChart(content, result);
       result.inputs.forEach(function (input) {
         if (input.catalog) {
           var link = el('a', 'Source dataset at the recorded version ↗', content, 'epi-forecast-source');
           link.href = input.catalog; link.target = '_blank'; link.rel = 'noopener';
         }
-        chart(content, 'Input supplied · ' + input.filename, input.series, input.table, false, result.predictions.length ? result.predictions[0].column : null);
+        el('h4', 'Input supplied · ' + input.filename, content);
+        tablePreview(content, input.table);
         if (input.sql && input.sql.trim()) {
           var sql = el('details', null, content);
           el('summary', 'Recorded workflow SQL', sql); el('pre', input.sql, sql);
         }
       });
-      chart(content, 'Recorded predictions', result.predictions, result.prediction_table, true);
+      el('h4', 'Recorded predictions', content);
+      tablePreview(content, result.prediction_table);
       var config = el('details', null, content);
       el('summary', 'Run configuration', config); el('pre', JSON.stringify(result.config, null, 2), config);
       state.loaded = result.cacheable;
