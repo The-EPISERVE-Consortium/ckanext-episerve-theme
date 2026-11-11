@@ -3,3 +3,9 @@ episerve_theme:
   contents:
     - episerve.css
     - model_card.css
+    - forecast_preview.css
+
+forecast_preview:
+  output: episerve_theme/forecast_preview.js
+  contents:
+    - forecast_preview.js

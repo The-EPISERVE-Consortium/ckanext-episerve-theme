@@ -1,0 +1,7 @@
+{% asset 'episerve_theme/forecast_preview' %}
+<div class="epi-forecast" data-qid="{{ qid }}" data-version="{{ version or '' }}">
+  <p class="epi-api-intro">{{ _('Explore the input supplied to this run and its recorded predictions. The model may have selected or processed these inputs internally.') }}</p>
+  <p class="epi-forecast-status" role="status" aria-live="polite">{{ _('Open this tab to prepare the preview.') }}</p>
+  <button type="button" class="btn btn-sm btn-outline-secondary epi-forecast-retry" hidden>{{ _('Retry preview') }}</button>
+  <div class="epi-forecast-content"></div>
+</div>

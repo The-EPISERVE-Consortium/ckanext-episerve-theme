@@ -128,6 +128,61 @@ def lineage_view(qid):
     return _json(lineage.view(result, DOIP_NAMESPACE, API_PUBLIC_URL))
 
 
+def forecast_preview_view(qid):
+    """Proxy a public run preview after checking the catalog visitor's access.
+
+    Args:
+        qid: Model-run identifier supplied by the tab.
+
+    Returns:
+        Bounded API JSON with no browser or intermediary caching.
+    """
+    import re
+
+    headers = {"Cache-Control": "no-store"}
+    if not re.fullmatch(r"[Qq][0-9]{1,30}", qid):
+        return Response(json.dumps({"detail": "Invalid run identifier."}), status=400,
+                        content_type="application/json", headers=headers)
+    try:
+        package = toolkit.get_action("package_show")(
+            {"user": getattr(toolkit.current_user, "name", None)}, {"id": qid.lower()})
+    except (toolkit.ObjectNotFound, toolkit.NotAuthorized):
+        return Response(json.dumps({"detail": "Run not found or access denied."}), status=404,
+                        content_type="application/json", headers=headers)
+    extras = {entry["key"]: entry["value"] for entry in package.get("extras", [])}
+    if extras.get("dataset_type") != "model-run" and not any(
+            group.get("name") == "type-model-run" for group in package.get("groups", [])):
+        return Response(json.dumps({"detail": "Model run not found."}), status=404,
+                        content_type="application/json", headers=headers)
+    requested = toolkit.request.args.get("version")
+    commit = versions.valid_commit(requested)
+    if requested is not None and not commit:
+        return Response(json.dumps({"detail": "Invalid run version."}), status=400,
+                        content_type="application/json", headers=headers)
+    url = f"{API_INTERNAL_URL.rstrip('/')}/model-runs/{qid.upper()}/forecast-preview"
+    if commit:
+        url += "?" + urllib.parse.urlencode({"version": commit})
+    try:
+        with urllib.request.urlopen(url, timeout=120) as result:
+            body = result.read(2 * 1024 * 1024 + 1)
+            if len(body) > 2 * 1024 * 1024:
+                raise ValueError("Preview response exceeds the size limit")
+        return Response(body, content_type="application/json", headers=headers)
+    except urllib.error.HTTPError as exc:
+        message = "The preview is unavailable. Please retry shortly."
+        try:
+            error = json.loads(exc.read(4096))
+            if isinstance(error.get("detail"), str):
+                message = error["detail"]
+        except (ValueError, AttributeError):
+            pass
+        return Response(json.dumps({"detail": message}), status=exc.code if exc.code in (400, 403, 404, 422, 503) else 502,
+                        content_type="application/json", headers=headers)
+    except Exception:
+        return Response(json.dumps({"detail": "The preview service is unavailable. Please retry shortly."}), status=502,
+                        content_type="application/json", headers=headers)
+
+
 class EPIServeThemePlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IBlueprint)
@@ -155,10 +210,16 @@ class EPIServeThemePlugin(plugins.SingletonPlugin):
         toolkit.add_resource("fanstatic", "episerve_theme")
 
     def get_blueprint(self):
+        """Register the theme proxy routes for lineage and forecast previews.
+
+        Returns:
+            Flask blueprint containing the theme endpoints.
+        """
         bp = Blueprint("episerve_theme", __name__)
         bp.add_url_rule(
             "/metabase-proxy/<card_id>",
             view_func=metabase_proxy,
         )
         bp.add_url_rule("/lineage-view/<qid>", view_func=lineage_view)
+        bp.add_url_rule("/forecast-preview/<qid>", view_func=forecast_preview_view)
         return bp
