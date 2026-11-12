@@ -79,7 +79,7 @@ def render_page(entry_type='model-run', restricted=False, authenticated=False, p
     pkg = package if package is not None else pkg
     helpers = SimpleNamespace(
         episerve_version=lambda pkg: None, episerve_run_header=lambda pkg: run_header,
-        url_for=lambda route, id: "/dataset/" + id,
+        url_for=lambda route, id, **kwargs: "/dataset/" + id + ("?version=" + kwargs["version"] if kwargs.get("version") else ""),
         get_pkg_dict_extra=lambda pkg, key: next((e['value'] for e in pkg['extras'] if e['key'] == key), None),
         episerve_model_card=lambda extras: None, episerve_lineage_qid=lambda pkg: None,
         check_access=lambda *args: False, dataset_display_name=lambda pkg: 'Model run fixture',
@@ -117,11 +117,12 @@ def test_forecast_tab_is_scoped_to_permitted_model_run_pages(entry_type, restric
 
 def test_run_header_retains_links_and_escapes_recorded_sql():
     """Render linked provenance and collapsed SQL without interpreting source text."""
-    header = {'title': 'Test model run', 'model': 'model__test', 'model_qid': 'Q123',
-              'sources': [{'qid': 'Q456', 'title': '<script>source</script>'}],
+    header = {'title': 'Test model run', 'model': 'model__test', 'model_qid': 'Q123', 'model_version': 'a' * 64,
+              'sources': [{'qid': 'Q456', 'title': '<script>source</script>', 'version': 'b' * 64}],
               'sql': ['SELECT \'<script>alert(1)</script>\''], 'notes': ''}
     html = render_page(run_header=header)
-    assert '/dataset/q123' in html and '/dataset/q456' in html
+    assert '/dataset/q123?version=' + 'a' * 64 in html
+    assert '/dataset/q456?version=' + 'b' * 64 in html
     assert '<details class="epi-run-sql">' in html
     assert '&lt;script&gt;source&lt;/script&gt;' in html
     assert '&lt;script&gt;alert(1)&lt;/script&gt;' in html

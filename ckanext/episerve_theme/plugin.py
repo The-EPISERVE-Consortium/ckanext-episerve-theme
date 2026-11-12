@@ -23,11 +23,19 @@ def episerve_run_header(pkg):
     """
     header = run_header.header(pkg)
     if header:
+        qid = (pkg.get('name') or '').upper()
+        commit = episerve_request_version() or (_fetch_newest(qid) if lineage.valid_qid(qid) else None)
+        fdo = _fetch_fdo(qid, commit) if commit and lineage.valid_qid(qid) else None
+        header = run_header.pin_links(header, fdo, DOIP_NAMESPACE)
         for source in header['sources']:
             try:
                 entry = toolkit.get_action('package_show')(
                     {'user': toolkit.current_user.name}, {'id': source['qid'].lower()})
                 source['title'] = entry.get('title') or source['qid']
+                if source['version']:
+                    recorded = _fetch_fdo(source['qid'], source['version'])
+                    profile = (recorded or {}).get('profile') or {}
+                    source['title'] = profile.get('display_name') or profile.get('name') or source['title']
             except (toolkit.ObjectNotFound, toolkit.NotAuthorized):
                 pass
     return header

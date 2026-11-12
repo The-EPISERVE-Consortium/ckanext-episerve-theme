@@ -59,8 +59,8 @@
     {% if run_header %}
     <div class="epi-ds-desc">
       <p>{{ _('Run of model') }}
-        {% if run_header.model_qid %}<a href="{{ h.url_for(pkg.type ~ '.read', id=run_header.model_qid | lower) }}">{{ run_header.model }}</a>{% else %}{{ run_header.model }}{% endif %}{% if run_header.sources %}
-        {{ _('on') }} {% for source in run_header.sources %}<a href="{{ h.url_for(pkg.type ~ '.read', id=source.qid | lower) }}">{{ source.title }}{% if source.title != source.qid %} ({{ source.qid }}){% endif %}</a>{{ ', ' if not loop.last }}{% endfor %}{% endif %}.
+        {% if run_header.model_qid %}<a href="{{ h.url_for(pkg.type ~ '.read', id=run_header.model_qid | lower, version=run_header.model_version) if run_header.model_version else h.url_for(pkg.type ~ '.read', id=run_header.model_qid | lower) }}">{{ run_header.model }}</a>{% else %}{{ run_header.model }}{% endif %}{% if not run_header.model_version %} <span>({{ _(run_header.model_version_note or 'version not recorded') }})</span>{% endif %}{% if run_header.sources %}
+        {{ _('on') }} {% for source in run_header.sources %}<a href="{{ h.url_for(pkg.type ~ '.read', id=source.qid | lower, version=source.version) if source.version else h.url_for(pkg.type ~ '.read', id=source.qid | lower) }}">{{ source.title }}{% if source.title != source.qid %} ({{ source.qid }}){% endif %}</a>{{ ', ' if not loop.last }}{% endfor %}{% endif %}.
       </p>
       {% if run_header.sql %}
       <details class="epi-run-sql">

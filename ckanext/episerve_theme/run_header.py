@@ -3,6 +3,9 @@
 from datetime import datetime
 import json
 import re
+from urllib.parse import parse_qs, urlsplit
+
+from ckanext.episerve_theme.versions import valid_commit
 
 _QID = re.compile(r"Q\d+", re.IGNORECASE)
 
@@ -58,3 +61,45 @@ def header(pkg):
             'sources': [{'qid': qid, 'title': qid} for qid in sources],
             'sql': [sql for sql in sql_blocks if isinstance(sql, str) and sql.strip()],
             'notes': remaining}
+
+
+def pin_links(header, fdo, doip_namespace):
+    """Attach only immutable versions explicitly recorded in the run provenance.
+
+    Args:
+        header: Prepared run header metadata.
+        fdo: The run's FDO at the displayed artifact version, or None.
+        doip_namespace: Trusted public DOIP base URL.
+
+    Returns:
+        Header copy with separate source links for distinct recorded versions.
+    """
+    provenance = (fdo or {}).get('provenance') or {}
+    used = provenance.get('prov:used') or []
+    if isinstance(used, dict):
+        used = [used]
+    if not isinstance(used, list):
+        used = []
+    agent = provenance.get('prov:wasAssociatedWith') or {}
+    entities = used + ([agent] if isinstance(agent, dict) else [])
+    pins = {}
+    prefix = doip_namespace.rstrip('/') + '/doip/retrieve/'
+    for entity in entities:
+        url = entity.get('@id', '') if isinstance(entity, dict) else ''
+        if not isinstance(url, str) or not url.startswith(prefix):
+            continue
+        parts = urlsplit(url)
+        qid = parts.path[len(urlsplit(prefix).path):].split('/', 1)[0].upper()
+        values = parse_qs(parts.query, keep_blank_values=True).get('version', [])
+        commit = valid_commit(values[0]) if len(values) == 1 else None
+        if _QID.fullmatch(qid) and commit and commit not in pins.get(qid, []):
+            pins.setdefault(qid, []).append(commit)
+    sources = []
+    for source in header['sources']:
+        for commit in pins.get(source['qid'], [None]):
+            sources.append({**source, 'version': commit})
+    model_pins = pins.get(header.get('model_qid'), [])
+    return {**header, 'sources': sources,
+            'model_version': model_pins[0] if len(model_pins) == 1 else None,
+            'model_version_note': ('version ambiguous' if len(model_pins) > 1 else
+                                   ('version not recorded' if fdo else 'version unavailable'))}

@@ -148,4 +148,41 @@ def test_run_header_does_not_reveal_restricted_source_titles(proxy):
         {'key': 'model', 'value': 'model__test'},
         {'key': 'input_dataset_qids', 'value': '["Q456"]'}]}
     result = module.episerve_run_header(package)
-    assert result['sources'] == [{'qid': 'Q456', 'title': 'Q456'}]
+    assert result['sources'] == [{'qid': 'Q456', 'title': 'Q456', 'version': None}]
+
+
+def test_run_header_pins_from_displayed_run_version(proxy, monkeypatch):
+    """Resolve provenance from the selected run snapshot rather than its newest one.
+
+    Args:
+        proxy: Plugin and request fixtures.
+        monkeypatch: Fixture replacing versioned metadata reads.
+    """
+    module, state = proxy
+    selected, source_commit = 'a' * 64, 'b' * 64
+    state['query']['version'] = selected
+    state['package'] = {'title': 'Current source title'}
+    package = {'name': 'q1234567', 'groups': [{'name': 'type-model-run'}], 'extras': [
+        {'key': 'model', 'value': 'model__test'},
+        {'key': 'input_dataset_qids', 'value': '["Q4567890"]'}]}
+    calls = []
+
+    def fetch(qid, commit):
+        """Return snapshot metadata while recording exact version reads.
+
+        Args:
+            qid: Object identifier.
+            commit: Requested immutable version.
+
+        Returns:
+            Recorded run provenance or source metadata.
+        """
+        calls.append((qid, commit))
+        if qid == 'Q1234567':
+            return {'provenance': {'prov:used': [{'@id': f'{module.DOIP_NAMESPACE}/doip/retrieve/Q4567890/file?version={source_commit}'}]}}
+        return {'profile': {'display_name': 'Recorded source title'}}
+
+    monkeypatch.setattr(module, '_fetch_fdo', fetch)
+    result = module.episerve_run_header(package)
+    assert calls == [('Q1234567', selected), ('Q4567890', source_commit)]
+    assert result['sources'] == [{'qid': 'Q4567890', 'title': 'Recorded source title', 'version': source_commit}]

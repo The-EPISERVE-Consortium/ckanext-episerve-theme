@@ -44,3 +44,25 @@ def test_missing_and_legacy_metadata():
     pkg = run(model='test')
     pkg['title'] = 'Model-run with model: test [20261017-1405]'
     assert header(pkg)['title'] == 'Test model run · 17 Oct 2026, 14:05'
+
+
+def test_links_use_only_recorded_immutable_versions():
+    """Keep distinct input versions and reject moving refs and foreign namespaces."""
+    from ckanext.episerve_theme.run_header import pin_links
+    data = header(run(model='test', model_qid='Q123', input_dataset_qids='["Q456", "Q789"]'))
+    base = 'https://doip.example'
+    commit = 'a' * 64
+    other = 'b' * 64
+    fdo = {'provenance': {'prov:used': [
+        {'@id': f'{base}/doip/retrieve/Q456/file.parquet?version={commit}'},
+        {'@id': f'{base}/doip/retrieve/Q456/second.parquet?version={commit}'},
+        {'@id': f'{base}/doip/retrieve/Q456/file.parquet?version={other}'},
+        {'@id': f'{base}/doip/retrieve/Q789/file.parquet?version=main'},
+        {'@id': f'https://foreign.example/doip/retrieve/Q789?version={commit}'}],
+        'prov:wasAssociatedWith': {'@id': 'ghcr.io/model:latest'}}}
+    pinned = pin_links(data, fdo, base)
+    assert [(s['qid'], s['version']) for s in pinned['sources']] == [('Q456', commit), ('Q456', other), ('Q789', None)]
+    assert pinned['model_version'] is None
+    assert pinned['model_version_note'] == 'version not recorded'
+    fdo['provenance']['prov:wasAssociatedWith'] = {'@id': f'{base}/doip/retrieve/Q123?version={other}'}
+    assert pin_links(data, fdo, base)['model_version'] == other
