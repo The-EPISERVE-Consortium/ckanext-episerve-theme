@@ -9,7 +9,28 @@ import ckan.plugins.toolkit as toolkit
 from flask import Blueprint, Response
 from flask import g as flask_g
 
-from ckanext.episerve_theme import dates, labels, lineage, model_card, signing, versions
+from ckanext.episerve_theme import dates, labels, lineage, model_card, run_header, signing, versions
+
+
+def episerve_run_header(pkg):
+    """Build run header links using source titles visible to the current visitor.
+
+    Args:
+        pkg: Metadata for the displayed catalog entry and version.
+
+    Returns:
+        Run header fields, or None when the original header should be retained.
+    """
+    header = run_header.header(pkg)
+    if header:
+        for source in header['sources']:
+            try:
+                entry = toolkit.get_action('package_show')(
+                    {'user': toolkit.current_user.name}, {'id': source['qid'].lower()})
+                source['title'] = entry.get('title') or source['qid']
+            except (toolkit.ObjectNotFound, toolkit.NotAuthorized):
+                pass
+    return header
 
 
 def episerve_signed_url(url):
@@ -201,6 +222,7 @@ class EPIServeThemePlugin(plugins.SingletonPlugin):
             "episerve_is_card_extra": lambda key: key in model_card.CARD_EXTRAS,
             "episerve_lineage_qid": lineage.qid_for,
             "episerve_with_created": dates.with_created,
+            "episerve_run_header": episerve_run_header,
             "episerve_lineage_api_url": lambda qid, version=None: (
                 f"{API_PUBLIC_URL.rstrip('/')}/lineage/events?object={qid}" + (f"&version={version}" if version else "")),
         }

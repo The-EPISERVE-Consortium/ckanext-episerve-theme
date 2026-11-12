@@ -134,3 +134,18 @@ def test_proxy_refuses_unauthorized_or_invalid_requests_before_upstream(proxy, c
         state['query']['version'] = 'main'
     response = module.forecast_preview_view('q1793997474911')
     assert response.status_code == status and not state['calls']
+
+
+def test_run_header_does_not_reveal_restricted_source_titles(proxy):
+    """Leave source identifiers visible when the visitor cannot read their titles.
+
+    Args:
+        proxy: Plugin and catalog access fixtures.
+    """
+    module, state = proxy
+    state['denied'] = True
+    package = {'groups': [{'name': 'type-model-run'}], 'extras': [
+        {'key': 'model', 'value': 'model__test'},
+        {'key': 'input_dataset_qids', 'value': '["Q456"]'}]}
+    result = module.episerve_run_header(package)
+    assert result['sources'] == [{'qid': 'Q456', 'title': 'Q456'}]

@@ -55,13 +55,15 @@ class Snippets(Extension):
         return Markup(self.environment.get_template(filename).render({**context.get_all(), **kwargs}))
 
 
-def render_page(entry_type='model-run', restricted=False, authenticated=False):
+def render_page(entry_type='model-run', restricted=False, authenticated=False, package=None, run_header=None):
     """Render package/read.html using the real forecast tab markup.
 
     Args:
         entry_type: Catalog entry kind.
         restricted: Whether anonymous file access is hidden.
         authenticated: Whether the fixture visitor is signed in.
+        package: Optional real catalog metadata for header validation.
+        run_header: Optional prepared run header for template validation.
 
     Returns:
         Complete page HTML suitable for unit and browser validation.
@@ -74,8 +76,10 @@ def render_page(entry_type='model-run', restricted=False, authenticated=False):
     pkg = {'id': 'id', 'name': 'q1793997474911', 'type': 'dataset', 'state': 'active', 'notes': '',
            'resources': [], 'groups': [{'name': 'type-model-run'}] if entry_type == 'group-only-model-run' else [], 'extras': [{'key': 'dataset_type', 'value': entry_type},
                                       {'key': 'access', 'value': 'restricted' if restricted else 'open'}]}
+    pkg = package if package is not None else pkg
     helpers = SimpleNamespace(
-        episerve_version=lambda pkg: None,
+        episerve_version=lambda pkg: None, episerve_run_header=lambda pkg: run_header,
+        url_for=lambda route, id: "/dataset/" + id,
         get_pkg_dict_extra=lambda pkg, key: next((e['value'] for e in pkg['extras'] if e['key'] == key), None),
         episerve_model_card=lambda extras: None, episerve_lineage_qid=lambda pkg: None,
         check_access=lambda *args: False, dataset_display_name=lambda pkg: 'Model run fixture',
@@ -109,3 +113,16 @@ def test_forecast_tab_is_scoped_to_permitted_model_run_pages(entry_type, restric
         assert "epi-ds-tab active\" type=\"button\" onclick=\"epiTab(this,'tab-forecast')" in html
         assert '<div class="epi-pane" id="tab-forecast">' in html
         assert '<div class="epi-pane" id="tab-resources" style="display:none">' in html
+
+
+def test_run_header_retains_links_and_escapes_recorded_sql():
+    """Render linked provenance and collapsed SQL without interpreting source text."""
+    header = {'title': 'Test model run', 'model': 'model__test', 'model_qid': 'Q123',
+              'sources': [{'qid': 'Q456', 'title': '<script>source</script>'}],
+              'sql': ['SELECT \'<script>alert(1)</script>\''], 'notes': ''}
+    html = render_page(run_header=header)
+    assert '/dataset/q123' in html and '/dataset/q456' in html
+    assert '<details class="epi-run-sql">' in html
+    assert '&lt;script&gt;source&lt;/script&gt;' in html
+    assert '&lt;script&gt;alert(1)&lt;/script&gt;' in html
+    assert '<script>source</script>' not in html

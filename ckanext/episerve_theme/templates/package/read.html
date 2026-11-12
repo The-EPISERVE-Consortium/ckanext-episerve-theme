@@ -21,6 +21,7 @@
 {% set hide_files = h.get_pkg_dict_extra(pkg, 'access') == 'restricted' and not current_user.is_authenticated %}
 {# Model entries get a "Model card" tab (opened first) from the card extras the sync flow writes. #}
 {% set card = h.episerve_model_card(pkg.extras) %}
+{% set run_header = h.episerve_run_header(pkg) %}
 {# Datasets, benchmark files and model runs get a "Lineage" tab (where the item comes from); models do not. #}
 {% set lineage_qid = h.episerve_lineage_qid(pkg) %}
 {% set run_group = pkg.groups | selectattr('name', 'equalto', 'type-model-run') | list %}
@@ -48,14 +49,28 @@
     {% snippet "package/snippets/version_banner.html", ver=ver, latest_url=h.url_for(pkg.type ~ '.read', id=pkg.name) %}
     {% endif %}
     <h1 class="epi-ds-title">
-      {{ h.dataset_display_name(pkg) }}
+      {{ run_header.title if run_header else h.dataset_display_name(pkg) }}
       {% if pkg.state.startswith('draft') %} [{{ _('Draft') }}]{% endif %}
       {% if pkg.state == 'deleted' %} [{{ _('Deleted') }}]{% endif %}
       {% if pkg.private %}
         <span class="badge bg-secondary ms-2"><i class="fa fa-lock"></i> {{ _('Private') }}</span>
       {% endif %}
     </h1>
-    {% if pkg.notes %}
+    {% if run_header %}
+    <div class="epi-ds-desc">
+      <p>{{ _('Run of model') }}
+        {% if run_header.model_qid %}<a href="{{ h.url_for(pkg.type ~ '.read', id=run_header.model_qid | lower) }}">{{ run_header.model }}</a>{% else %}{{ run_header.model }}{% endif %}{% if run_header.sources %}
+        {{ _('on') }} {% for source in run_header.sources %}<a href="{{ h.url_for(pkg.type ~ '.read', id=source.qid | lower) }}">{{ source.title }}{% if source.title != source.qid %} ({{ source.qid }}){% endif %}</a>{{ ', ' if not loop.last }}{% endfor %}{% endif %}.
+      </p>
+      {% if run_header.sql %}
+      <details class="epi-run-sql">
+        <summary>{{ _('Recorded data transformation SQL') }}</summary>
+        {% for sql in run_header.sql %}<pre><code>{{ sql }}</code></pre>{% endfor %}
+      </details>
+      {% endif %}
+      {% if run_header.notes %}{{ h.render_markdown(run_header.notes) }}{% endif %}
+    </div>
+    {% elif pkg.notes %}
     <div class="epi-ds-desc">{{ h.render_markdown(h.get_translated(pkg, 'notes')) }}</div>
     {% endif %}
   </div>
