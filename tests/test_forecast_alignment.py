@@ -14,7 +14,7 @@ def test_combined_chart_aligns_dates_weeks_positions_and_backtests():
     script = r'''
 const fs = require('fs'), vm = require('vm'), assert = require('assert');
 const source = fs.readFileSync(process.argv[1], 'utf8').replace('}());', 'window.combine = combine; window.forecastTransition = forecastTransition; window.chartOptions = chartOptions;}());');
-const context = {window:{}};
+const context = {window:{}, document:{readyState:'complete', getElementById:()=>null}};
 vm.runInNewContext(source, context);
 const combine = context.window.combine;
 const transition = context.window.forecastTransition;

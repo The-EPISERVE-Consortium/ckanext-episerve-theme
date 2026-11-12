@@ -105,3 +105,7 @@ def test_forecast_tab_is_scoped_to_permitted_model_run_pages(entry_type, restric
         assert 'style="display:none"' in html
         assert 'data-qid="q1793997474911"' in html
         assert 'epiForecast()' in html
+        assert html.index("epiTab(this,'tab-forecast')") < html.index("epiTab(this,'tab-resources')")
+        assert "epi-ds-tab active\" type=\"button\" onclick=\"epiTab(this,'tab-forecast')" in html
+        assert '<div class="epi-pane" id="tab-forecast">' in html
+        assert '<div class="epi-pane" id="tab-resources" style="display:none">' in html

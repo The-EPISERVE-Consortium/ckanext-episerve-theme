@@ -21,11 +21,11 @@
 {% set hide_files = h.get_pkg_dict_extra(pkg, 'access') == 'restricted' and not current_user.is_authenticated %}
 {# Model entries get a "Model card" tab (opened first) from the card extras the sync flow writes. #}
 {% set card = h.episerve_model_card(pkg.extras) %}
-{% set first_tab = 'card' if card else ('resources' if not hide_files else 'info') %}
 {# Datasets, benchmark files and model runs get a "Lineage" tab (where the item comes from); models do not. #}
 {% set lineage_qid = h.episerve_lineage_qid(pkg) %}
 {% set run_group = pkg.groups | selectattr('name', 'equalto', 'type-model-run') | list %}
 {% set has_forecast = (h.get_pkg_dict_extra(pkg, 'dataset_type') == 'model-run' or run_group) and not hide_files %}
+{% set first_tab = 'forecast' if has_forecast else ('card' if card else ('resources' if not hide_files else 'info')) %}
 <div class="primary col-12{% if card %} epi-model-page{% endif %}" role="main">
 
   {% if h.check_access('package_update', {'id': pkg.id }) %}
@@ -63,9 +63,14 @@
   {# Lower card: tabbed resources + additional info #}
   <div class="epi-ds-body">
     <ul class="nav epi-ds-tabs" role="tablist">
+      {% if has_forecast %}
+      <li class="nav-item" role="presentation">
+        <button class="epi-ds-tab{% if first_tab == 'forecast' %} active{% endif %}" type="button" onclick="epiTab(this,'tab-forecast'); epiForecast()">{{ _('Input & Forecast') }}</button>
+      </li>
+      {% endif %}
       {% if card %}
       <li class="nav-item" role="presentation">
-        <button class="epi-ds-tab active" type="button"
+        <button class="epi-ds-tab{% if first_tab == 'card' %} active{% endif %}" type="button"
                 onclick="epiTab(this,'tab-card')">{{ _('Model card') }}</button>
       </li>
       {% endif %}
@@ -73,11 +78,6 @@
       <li class="nav-item" role="presentation">
         <button class="epi-ds-tab{% if first_tab == 'resources' %} active{% endif %}" type="button"
                 onclick="epiTab(this,'tab-resources')">{{ _('Resources') }}</button>
-      </li>
-      {% endif %}
-      {% if has_forecast %}
-      <li class="nav-item" role="presentation">
-        <button class="epi-ds-tab" type="button" onclick="epiTab(this,'tab-forecast'); epiForecast()">{{ _('Input & Forecast') }}</button>
       </li>
       {% endif %}
       <li class="nav-item" role="presentation">
@@ -103,7 +103,7 @@
     </ul>
     <div class="epi-ds-tab-content">
       {% if card %}
-      <div class="epi-pane" id="tab-card">
+      <div class="epi-pane" id="tab-card"{% if first_tab != 'card' %} style="display:none"{% endif %}>
         {% snippet "package/snippets/model_card.html", card=card %}
       </div>
       {% endif %}
@@ -115,7 +115,7 @@
       </div>
       {% endif %}
       {% if has_forecast %}
-      <div class="epi-pane" id="tab-forecast" style="display:none">
+      <div class="epi-pane" id="tab-forecast"{% if first_tab != 'forecast' %} style="display:none"{% endif %}>
         {% snippet "package/snippets/forecast_preview.html", qid=pkg.name, version=ver.commit if ver else None %}
       </div>
       {% endif %}

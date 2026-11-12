@@ -356,4 +356,11 @@
     } finally { state.loading = false; }
     retry.onclick = function () { window.epiForecast(); };
   };
+  /** Prepare the preview on page load when Input & Forecast is the default tab. */
+  function initializeForecast() {
+    var pane = document.getElementById('tab-forecast');
+    if (pane && pane.style.display !== 'none') window.epiForecast();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initializeForecast);
+  else initializeForecast();
 }());

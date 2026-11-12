@@ -1,7 +1,8 @@
 # Model-run forecast charts
 
 The Input & Forecast tab uses **ApexCharts 3.54.1**, loaded from jsDelivr only
-when the tab is opened and preview data are available. The script URL is pinned
+when the tab is shown and preview data are available. Input & Forecast is the
+first and default tab for model runs, so their preview loads on page open. The script URL is pinned
 and checked with SHA-384 subresource integrity. This release is MIT licensed:
 https://github.com/apexcharts/apexcharts.js/blob/v3.54.1/LICENSE
 
