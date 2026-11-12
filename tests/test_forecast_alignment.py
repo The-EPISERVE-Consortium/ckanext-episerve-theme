@@ -13,11 +13,12 @@ def test_combined_chart_aligns_dates_weeks_positions_and_backtests():
     source = Path(__file__).parents[1] / 'ckanext/episerve_theme/fanstatic/forecast_preview.js'
     script = r'''
 const fs = require('fs'), vm = require('vm'), assert = require('assert');
-const source = fs.readFileSync(process.argv[1], 'utf8').replace('}());', 'window.combine = combine; window.forecastTransition = forecastTransition;}());');
+const source = fs.readFileSync(process.argv[1], 'utf8').replace('}());', 'window.combine = combine; window.forecastTransition = forecastTransition; window.chartOptions = chartOptions;}());');
 const context = {window:{}};
 vm.runInNewContext(source, context);
 const combine = context.window.combine;
 const transition = context.window.forecastTransition;
+const options = context.window.chartOptions;
 /** Construct generic chart series for axis tests. */
 function series(axis, points, extras) {
   return Object.assign({axis, points, column:'value', label:'value', rows:points.length, groups:{}, duplicate_x:false}, extras || {});
@@ -32,11 +33,27 @@ assert.equal(combined.points[1].q90, 4);
 assert.equal(combined.unaligned, false);
 assert.equal(transition(combined.points), null); // Backtest observations continue into the forecast.
 let future = combine(series('day', [{x:'2026-01-01',value:1},{x:'2026-01-02',value:2}]),
-                     series('day', [{x:'2026-01-03',value:3},{x:'2026-01-04',value:4}]));
+                     series('day', [{x:'2026-01-03',value:3,q10:2,q90:4},{x:'2026-01-04',value:4,q10:3,q90:5}]));
 assert.equal(transition(future.points).from, 1);
 assert.equal(transition(future.points).to, 2);
+let configuration = options(future);
+assert.equal(configuration.chart.type, 'rangeArea');
+assert.equal(configuration.chart.id, undefined); // Avoid v3 named-chart registry cycles on updates.
+assert.equal(configuration.xaxis.type, 'datetime');
+assert.equal(configuration.stroke.curve, 'straight');
+assert.equal(configuration.series[1].data.length, 2);
+assert.equal(configuration.series[2].data.length, 2);
+assert.equal(configuration.series[3].data.length, 2);
+assert.equal(configuration.series[3].data[0].y, 2);
+assert.equal(configuration.series[3].data[1].y, 3);
+let reset;
+configuration.chart.toolbar.tools.customIcons[0].click({updateOptions:(value)=>{reset=value;}});
+assert.equal(reset.xaxis.min, future.points[0].axis_value);
+assert.equal(reset.xaxis.max, future.points[3].axis_value);
+
 assert.equal(future.points.length, 4); // Connector never inserts observations or predictions.
 future.points[1].history = null;
+assert.equal(options(future).series[1].data[1].y, null);
 assert.equal(transition(future.points), null); // Preserve actual missing observations.
 assert.equal(transition([{x:'1', value:3}]), null);
 input = series('week', [{x:'2026-W01',value:1}]);
@@ -50,6 +67,10 @@ input = series('day', [{x:'2026-01-01',value:10},{x:'2026-01-02',value:20},{x:'2
 output = series('day', [{x:'102',value:21},{x:'103',value:31},{x:'104',value:41}], {position_axis:true});
 combined = combine(input, output);
 assert.equal(combined.axis, 'Input row position');
+assert.equal(options(combined).xaxis.type, 'numeric');
+assert.equal(options(combined).series[3].data.length, 0);
+assert.equal(options(combined).chart.type, 'line');
+assert.equal(options(combined).series[0].data.length, 0);
 assert.equal(combined.points.length, 4);
 assert.equal(combined.points[1].history, 20);
 assert.equal(combined.points[1].value, 21);

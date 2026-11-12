@@ -1,7 +1,7 @@
-/* Generic input/output charts. No model-specific rules or external chart scripts. */
+/* Generic input/output previews with a lazy, pinned ApexCharts renderer. */
 (function () {
   'use strict';
-  var state = {loading: false, loaded: false, observers: []};
+  var state = {loading: false, loaded: false, charts: [], apexPromise: null};
 
   /** Create an element using textContent so artifact values remain inert text. */
   function el(tag, text, parent, cls) {
@@ -9,15 +9,6 @@
     if (text !== null && text !== undefined) node.textContent = text;
     if (cls) node.className = cls;
     if (parent) parent.appendChild(node);
-    return node;
-  }
-
-  /** Create a native SVG element with fixed attribute names. */
-  function svgEl(tag, attrs, parent, text) {
-    var node = document.createElementNS('http://www.w3.org/2000/svg', tag);
-    Object.keys(attrs).forEach(function (key) { node.setAttribute(key, attrs[key]); });
-    if (text !== undefined) node.textContent = text;
-    parent.appendChild(node);
     return node;
   }
 
@@ -88,7 +79,7 @@
     var viewStart = Math.max(0, first - Math.max(20, outputs.length * 4));
     var viewEnd = Math.max(viewStart + 2, last + 1);
     return {column: forecast ? forecast.column : input.column, label: forecast ? forecast.label : input.label,
-            axis: allDates ? 'Date' : (positional ? 'Input row position' : (forecast ? forecast.axis : input.axis)),
+            date_axis: allDates, axis: allDates ? 'Date' : (positional ? 'Input row position' : (forecast ? forecast.axis : input.axis)),
             points: points, input_rows: input ? input.rows : 0, forecast_rows: forecast ? forecast.rows : 0,
             sampled: Boolean(input && input.sampled || forecast && forecast.sampled),
             duplicate_x: Boolean(input && input.duplicate_x || forecast && forecast.duplicate_x), unaligned: unaligned,
@@ -121,18 +112,23 @@
     inputSelect.setAttribute('aria-label', 'Input supplied series');
     var host = el('div', null, parent), selectedInputs = [];
 
-    /** Replace the graph after a series choice while releasing old observers. */
-    function render() {
-      state.observers.forEach(function (observer) { observer.disconnect(); }); state.observers = [];
+    /** Replace the graph after a series choice while releasing library handlers. */
+    async function render() {
+      forecasts.disabled = true; inputSelect.disabled = true;
+      destroyCharts();
       host.replaceChildren();
       var input = selectedInputs[Number(inputSelect.value)];
       var forecast = result.predictions[Number(forecasts.value)];
       var merged = input || forecast ? [combine(input && input.series, forecast)] : [];
-      chart(host, 'Input supplied & recorded predictions', merged, null, true);
+      try {
+        await chart(host, 'Input supplied & recorded predictions', merged);
+      } finally {
+        forecasts.disabled = !result.predictions.length; inputSelect.disabled = !selectedInputs.length;
+      }
     }
 
     /** Match target columns and retain explicit categorical input choices. */
-    function chooseInputs() {
+    async function chooseInputs() {
       var forecast = result.predictions[Number(forecasts.value)];
       selectedInputs = choices.filter(function (choice) { return !forecast || choice.series.column === forecast.column; });
       inputSelect.replaceChildren();
@@ -147,155 +143,166 @@
         });
         if (matching >= 0) inputSelect.value = matching;
       }
-      render();
+      await render();
     }
-    inputSelect.addEventListener('change', render);
-    forecasts.addEventListener('change', chooseInputs);
+    /** Keep chart update failures visible and retryable without uncaught promises. */
+    function updateError(error) {
+      el('p', 'The chart could not be updated. Change the selection to retry.', host, 'epi-forecast-note');
+      console.error('Forecast chart update failed:', error);
+    }
+    inputSelect.addEventListener('change', function () { render().catch(updateError); });
+    forecasts.addEventListener('change', function () { chooseInputs().catch(updateError); });
     forecasts.disabled = !result.predictions.length;
-    chooseInputs();
+    return chooseInputs();
   }
 
-  /** Render a selectable series with zoom, position controls, and pointer values. */
-  function chart(parent, title, allSeries, table, forecast, preferredColumn) {
+  /** Load the pinned MIT-licensed chart library only after the tab is opened. */
+  function loadApexCharts() {
+    if (state.apexPromise) return state.apexPromise;
+    var script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/apexcharts@3.54.1/dist/apexcharts.min.js';
+    script.integrity = 'sha384-KNaFJ+EK516RuHsoycvreec5pD7BkTKJEkjMrVSQWu9KGTl7En4dhIDv7t1DFJ+g';
+    script.crossOrigin = 'anonymous';
+    state.apexPromise = new Promise(function (resolve, reject) {
+      var timer = setTimeout(function () { reject(new Error('The chart library could not be loaded. Please retry.')); }, 30000);
+      script.onload = function () {
+        clearTimeout(timer);
+        if (typeof window.ApexCharts === 'function') resolve();
+        else reject(new Error('The chart library is unavailable. Please retry.'));
+      };
+      script.onerror = function () { clearTimeout(timer); reject(new Error('The chart library could not be loaded. Please retry.')); };
+      document.head.appendChild(script);
+    }).catch(function (error) {
+      script.remove(); state.apexPromise = null; throw error;
+    });
+    return state.apexPromise;
+  }
+
+  /** Release library event handlers and resize observers before replacing a chart. */
+  function destroyCharts() {
+    state.charts.forEach(function (instance) { instance.destroy(); });
+    state.charts = [];
+  }
+
+  /** Compute the initial forecast-focused viewport without discarding earlier input. */
+  function initialRange(series) {
+    var points = series.points;
+    var count = Math.max(2, Math.ceil(points.length * (series.initial_zoom || 100) / 100));
+    var start = Math.round(Math.max(0, points.length - count) * Math.min(100, series.initial_position || 0) / 100);
+    var selected = points.slice(start, start + count);
+    return {min:selected[0].axis_value, max:selected[selected.length - 1].axis_value};
+  }
+
+  /** Build mixed range-area and line options from already aligned cached data. */
+  function chartOptions(series) {
+    var points = series.points, transition = forecastTransition(points);
+    var fullMin = points[0].axis_value, fullMax = points[points.length - 1].axis_value;
+    var range = initialRange(series);
+    var dateAxis = series.date_axis;
+
+    /** Format coordinates without converting recorded row positions into dates. */
+    function formatX(value) {
+      if (dateAxis) return new Date(Number(value)).toISOString().slice(0, 10);
+      var match = points.find(function (point) { return point.axis_value === Number(value); });
+      return match ? match.x : String(Number(Number(value).toPrecision(6)));
+    }
+
+    /** Preserve genuine nulls while omitting coordinates absent from this series. */
+    function lineData(key) {
+      return points.filter(function (point) { return Object.prototype.hasOwnProperty.call(point, key); }).map(function (point) {
+        return {x:point.axis_value, y:Number.isFinite(point[key]) ? point[key] : null};
+      });
+    }
+    var forecast = lineData('value');
+    var band = points.filter(function (point) { return Object.prototype.hasOwnProperty.call(point, 'value'); }).map(function (point) {
+      var valid = Number.isFinite(point.q10) && Number.isFinite(point.q90) && point.q10 <= point.q90;
+      return {x:point.axis_value, y:valid ? [point.q10, point.q90] : [null, null]};
+    });
+    var hasBand = band.some(function (point) { return point.y.every(Number.isFinite); });
+    if (!hasBand) band = [];
+    var connector = transition ? [
+      {x:points[transition.from].axis_value, y:points[transition.from].history},
+      {x:points[transition.to].axis_value, y:points[transition.to].value}
+    ] : [];
+    return {
+      chart: {
+        type:hasBand ? 'rangeArea' : 'line', height:350, animations:{enabled:false}, fontFamily:'inherit',
+        parentHeightOffset:0, redrawOnParentResize:true, redrawOnWindowResize:true,
+        toolbar:{show:true, autoSelected:'zoom', tools:{download:true, selection:false, zoom:true, zoomin:true, zoomout:true, pan:true, reset:false,
+          customIcons:[{icon:'<button type="button" class="epi-forecast-full-range">Full range</button>', title:'Show the full supplied range', index:0,
+            click:function (chart) { return chart.updateOptions({xaxis:{min:fullMin, max:fullMax}}, false, false); }}]}},
+        zoom:{enabled:true, type:'x', autoScaleYaxis:true}, events:{}
+      },
+      series: [
+        {name:'Reported q10–q90', type:hasBand ? 'rangeArea' : 'line', data:band},
+        {name:'Input supplied', type:'line', data:lineData('history')},
+        {name:'Recorded predictions', type:'line', data:forecast},
+        {name:'Transition', type:'line', data:connector}
+      ],
+      colors:['#c62828', '#111827', '#c62828', '#c62828'],
+      stroke:{curve:'straight', width:[0, 2, 2, 2], dashArray:[0, 0, 0, 5]},
+      fill:{type:'solid', opacity:[0.16, 1, 1, 1]},
+      markers:{size:[0, 0, 3, 0], hover:{sizeOffset:2}},
+      dataLabels:{enabled:false}, legend:{show:false},
+      xaxis:{type:dateAxis ? 'datetime' : 'numeric', min:range.min, max:range.max,
+             tickAmount:4, labels:{datetimeUTC:true, hideOverlappingLabels:true, formatter:formatX,
+                                  style:{colors:'#52657d', fontSize:'11px'}}, tooltip:{enabled:false}},
+      yaxis:{decimalsInFloat:3, labels:{style:{colors:'#52657d', fontSize:'11px'},
+              formatter:function (value) { return Number.isFinite(value) ? Number(value.toPrecision(5)).toLocaleString() : ''; }}},
+      grid:{borderColor:'#e2e8f0', padding:{left:8, right:12}},
+      annotations:{xaxis:forecast.length ? [{x:forecast[0].x, borderColor:'#64748b', strokeDashArray:4}] : []},
+      tooltip:{shared:false, intersect:false, enabledOnSeries:[0, 1, 2],
+        custom:function (context) {
+          var entry = context.w.config.series[context.seriesIndex].data[context.dataPointIndex];
+          if (!entry) return '';
+          var point = points.find(function (candidate) { return candidate.axis_value === entry.x; });
+          if (!point) return '';
+          // Build text with DOM APIs, then serialize: version 3 expects an HTML string.
+          var box = el('div', null, null, 'epi-forecast-apex-tooltip');
+          el('strong', point.x, box);
+          el('div', series.column, box);
+          if (Object.prototype.hasOwnProperty.call(point, 'history')) {
+            el('div', 'Input supplied: ' + (point.history === null ? 'missing' : point.history), box);
+            if (point.input_x && point.input_x !== point.x) el('div', 'Input label: ' + point.input_x, box);
+          }
+          if (Object.prototype.hasOwnProperty.call(point, 'value')) el('div', 'Prediction: ' + (point.value === null ? 'missing' : point.value), box);
+          if (Number.isFinite(point.q10) && Number.isFinite(point.q90)) el('div', 'Reported q10: ' + point.q10 + ' · q90: ' + point.q90, box);
+          return box.outerHTML;
+        }
+      },
+      responsive:[{breakpoint:600, options:{chart:{height:330}, xaxis:{tickAmount:2}, grid:{padding:{left:0, right:4}}}}]
+    };
+  }
+
+  /** Render the combined chart using ApexCharts' native zoom, pan, reset and export. */
+  async function chart(parent, title, allSeries) {
     var panel = el('section', null, parent, 'epi-forecast-panel');
     el('h3', title, panel);
-    el('p', 'Black: input supplied · Red: recorded predictions · Shading: reported q10–q90', panel, 'epi-forecast-legend');
-    if (!allSeries.length) {
-      el('p', 'A reliable chart mapping is unavailable. Inspect the recorded data below.', panel, 'epi-forecast-note');
-      tablePreview(panel, table);
-      return;
-    }
-    var controls = el('div', null, panel, 'epi-forecast-controls');
-    var label = el('label', 'Series', controls, 'epi-forecast-series');
-    var select = el('select', null, label);
-    select.setAttribute('aria-label', title + ' series');
-    allSeries.forEach(function (series, index) { var option = el('option', series.label, select); option.value = index; });
-    if (allSeries.length === 1) label.style.display = 'none';
-    var preferred = allSeries.findIndex(function (series) { return series.column === preferredColumn; });
-    if (preferred >= 0) select.value = preferred;
-    var zoomLabel = el('label', 'Visible range', controls), zoom = el('input', null, zoomLabel);
-    zoom.type = 'range'; zoom.min = '1'; zoom.max = '100'; zoom.value = String(allSeries[0].initial_zoom || 100);
-    zoom.setAttribute('aria-label', title + ' visible range');
-    var positionLabel = el('label', 'Position', controls), position = el('input', null, positionLabel);
-    position.type = 'range'; position.min = '0'; position.max = '100'; position.value = String(Math.min(100, allSeries[0].initial_position || 0));
-    position.setAttribute('aria-label', title + ' position');
+    el('p', 'Black: input supplied · Red: recorded predictions · Shading: reported q10–q90 · Dashed join: transition', panel, 'epi-forecast-legend');
     var note = el('p', '', panel, 'epi-forecast-note');
+    if (!allSeries.length) { note.textContent = 'A reliable chart mapping is unavailable. Inspect the recorded data below.'; return; }
+    var series = allSeries[0];
+    if (series.unaligned) {
+      note.textContent = 'These recorded axes cannot be aligned reliably without guessing. Input and predictions remain available in the data tables below.'; return;
+    }
+    if (series.duplicate_x) { note.textContent = 'Repeated axis values make a single line ambiguous. Use the series selector or data table.'; return; }
+    if (!series.points.length) { note.textContent = 'No values available.'; return; }
+    note.textContent = series.axis + ' · ' + series.input_rows + ' supplied rows · ' + series.forecast_rows + ' predictions' +
+      (series.sampled ? ' · input display is sampled' : '') + '. Input supplied does not imply every observation was used internally.';
     var host = el('div', null, panel, 'epi-forecast-chart');
-    var tooltip = el('p', 'Move over the graph for exact displayed values.', panel, 'epi-forecast-tooltip');
-    tablePreview(panel, table);
-
-    /** Draw recorded observations in their original order without inferring dates. */
-    function draw() {
-      host.replaceChildren();
-      var series = allSeries[Number(select.value)], original = series.points;
-      position.disabled = zoom.value === '100';
-      if (series.unaligned) {
-        note.textContent = 'These recorded axes cannot be aligned reliably without guessing. Input and predictions remain available in the data tables below.';
-        return;
-      }
-      if (series.duplicate_x) {
-        note.textContent = 'Repeated axis values make a single line ambiguous. Use the series selector or data table.';
-        return;
-      }
-      var count = Math.max(2, Math.ceil(original.length * Number(zoom.value) / 100));
-      var start = Math.round(Math.max(0, original.length - count) * Number(position.value) / 100);
-      var points = original.slice(start, start + count);
-      note.textContent = series.axis + ' · ' + series.input_rows + ' supplied rows · ' + series.forecast_rows + ' predictions' +
-        (series.sampled ? ' · input display is sampled; zoom changes the visible range' : '') +
-        '. Input supplied does not imply every observation was used internally.';
-      if (!points.length) { note.textContent = 'No values available.'; return; }
-      var values = [];
-      points.forEach(function (point) {
-        ['history', 'value', 'q10', 'q90'].forEach(function (key) { if (Number.isFinite(point[key])) values.push(point[key]); });
-      });
-      if (!values.length) { note.textContent += ' No finite values are available.'; return; }
-      var width = Math.max(280, host.clientWidth), height = 280;
-      var left = 65, right = width - 18, top = 18, bottom = 225;
-      var low = Math.min.apply(null, values), high = Math.max.apply(null, values);
-      var padding = (high - low) * 0.08 || Math.max(Math.abs(high) * 0.05, 1);
-      low -= padding; high += padding;
-      var svg = svgEl('svg', {viewBox: '0 0 ' + width + ' ' + height, role: 'img', 'aria-label': title + ': ' + series.label}, host);
-      svgEl('title', {}, svg, title + ': ' + series.label);
-
-      /** Map a recorded row index to a plot coordinate. */
-      function x(index) {
-        var first = points[0].axis_value, span = points[points.length - 1].axis_value - first;
-        return left + (right - left) * (span ? (points[index].axis_value - first) / span : 0.5);
-      }
-      /** Map a finite numeric value to a plot coordinate. */
-      function y(value) { return bottom - (bottom - top) * (value - low) / (high - low); }
-      for (var tick = 0; tick <= 4; tick++) {
-        var value = low + (high - low) * tick / 4, py = y(value);
-        svgEl('line', {x1:left, x2:right, y1:py, y2:py, stroke:'#e2e8f0'}, svg);
-        svgEl('text', {x:left - 8, y:py + 4, 'text-anchor':'end', fill:'#52657d', 'font-size':11}, svg, Number(value.toPrecision(4)).toLocaleString());
-      }
-      (width < 550 ? [0, points.length - 1] : [0, Math.floor((points.length - 1) / 2), points.length - 1]).filter(function (v, i, a) { return a.indexOf(v) === i; }).forEach(function (index, i, ticks) {
-        svgEl('text', {x:x(index), y:bottom + 22, 'text-anchor':i === 0 ? 'start' : (i === ticks.length - 1 ? 'end' : 'middle'), fill:'#52657d', 'font-size':11}, svg, points[index].x);
-      });
-      var band = [];
-      /** Flush one continuous segment of valid reported quantiles. */
-      function flushBand() {
-        if (band.length > 1) {
-          var coords = band.map(function (p) { return x(p.index) + ',' + y(p.q90); }).concat(
-            band.slice().reverse().map(function (p) { return x(p.index) + ',' + y(p.q10); }));
-          svgEl('polygon', {points:coords.join(' '), fill:'rgba(198,40,40,0.16)'}, svg);
-        }
-        band = [];
-      }
-      points.forEach(function (point, index) {
-        if (Number.isFinite(point.q10) && Number.isFinite(point.q90) && point.q10 <= point.q90) {
-          band.push({index:index, q10:point.q10, q90:point.q90});
-        } else if (Object.prototype.hasOwnProperty.call(point, 'value')) flushBand();
-      });
-      flushBand();
-      [['history', '#111827'], ['value', '#c62828']].forEach(function (line) {
-        var path = '', connected = false;
-        points.forEach(function (point, index) {
-          if (!Object.prototype.hasOwnProperty.call(point, line[0])) return;
-          var value = point[line[0]];
-          if (!Number.isFinite(value)) { connected = false; return; }
-          path += (connected ? 'L' : 'M') + x(index) + ',' + y(value) + ' '; connected = true;
-          if (points.length <= 80 || line[0] === 'value') svgEl('circle', {cx:x(index), cy:y(value), r:2.5, fill:line[1]}, svg);
-        });
-        svgEl('path', {d:path, fill:'none', stroke:line[1], 'stroke-width':2, 'data-series':line[0]}, svg);
-      });
-      var transition = forecastTransition(points);
-      if (transition) {
-        var connector = svgEl('path', {
-          d:'M' + x(transition.from) + ',' + y(points[transition.from].history) + ' L' + x(transition.to) + ',' + y(points[transition.to].value),
-          fill:'none', stroke:'#c62828', 'stroke-width':2, 'stroke-dasharray':'4 3', 'data-series':'transition'
-        }, svg);
-        svgEl('title', {}, connector, 'Transition from the last supplied observation to the first recorded prediction; no additional data points.');
-      }
-      var boundary = points.findIndex(function (point) { return Object.prototype.hasOwnProperty.call(point, 'value'); });
-      if (boundary >= 0) {
-        svgEl('line', {x1:x(boundary), x2:x(boundary), y1:top, y2:bottom, stroke:'#64748b', 'stroke-dasharray':'4 4'}, svg);
-      }
-      if (forecast && points.some(function (point) { return Number.isFinite(point.q10) && Number.isFinite(point.q90); })) {
-        svgEl('text', {x:left, y:height - 12, fill:'#52657d', 'font-size':11}, svg, 'Shading: reported q10–q90');
-      }
-      svg.addEventListener('pointermove', function (event) {
-        var bounds = svg.getBoundingClientRect(), px = (event.clientX - bounds.left) * width / bounds.width;
-        var index = 0, distance = Infinity;
-        points.forEach(function (point, candidate) {
-          var gap = Math.abs(x(candidate) - px); if (gap < distance) { index = candidate; distance = gap; }
-        });
-        var point = points[index];
-        tooltip.textContent = point.x + ' · ' + series.column +
-          (Object.prototype.hasOwnProperty.call(point, 'history') ? ' · input supplied: ' + (point.history === null ? 'missing' : point.history) : '') +
-          (point.input_x && point.input_x !== point.x ? ' (' + point.input_x + ')' : '') +
-          (Object.prototype.hasOwnProperty.call(point, 'value') ? ' · prediction: ' + (point.value === null ? 'missing' : point.value) : '') +
-          (forecast && Number.isFinite(point.q10) && Number.isFinite(point.q90) ? ' · reported q10: ' + point.q10 + ', q90: ' + point.q90 : '');
-      });
+    host.setAttribute('role', 'region'); host.setAttribute('aria-label', title + ': ' + series.label);
+    el('p', 'Drag to zoom. Use the toolbar to pan, reset the full range, or download the chart.', panel, 'epi-forecast-note');
+    // Omit chart.id: v3 copies its global named-chart registry into options,
+    // creating cyclic configuration when a registered chart is later updated.
+    var instance = new window.ApexCharts(host, chartOptions(series));
+    state.charts.push(instance);
+    try {
+      await instance.render();
+    } catch (error) {
+      state.charts = state.charts.filter(function (candidate) { return candidate !== instance; });
+      try { instance.destroy(); } catch (cleanupError) { /* Rendering never completed. */ }
+      throw new Error('The interactive chart could not be rendered. Please retry.');
     }
-    select.addEventListener('change', draw);
-    zoom.addEventListener('input', draw);
-    position.addEventListener('input', draw);
-    if (window.ResizeObserver) {
-      var observer = new ResizeObserver(draw);
-      observer.observe(host); state.observers.push(observer);
-    }
-    draw();
   }
 
   /** Fetch preview JSON only when the model-run tab is opened, allowing retries. */
@@ -312,12 +319,18 @@
       var response = await fetch(url, {credentials:'same-origin', cache:'no-store'});
       var result = await response.json();
       if (!response.ok) throw new Error(typeof result.detail === 'string' ? result.detail : 'Preview unavailable.');
-      state.observers.forEach(function (observer) { observer.disconnect(); });
-      state.observers = [];
+      destroyCharts();
       content.replaceChildren();
       status.textContent = 'Run artifact version ' + result.artifact_commit.slice(0, 12) + ' · ' + (result.cached ? 'Saved preview' : 'Preview prepared');
       result.warnings.forEach(function (message) { el('p', message, content, 'epi-forecast-note'); });
-      combinedChart(content, result);
+      var chartError = null;
+      try {
+        await loadApexCharts();
+        await combinedChart(content, result);
+      } catch (error) {
+        chartError = error;
+        el('p', error.message + ' The recorded data remain available below.', content, 'epi-forecast-note');
+      }
       result.inputs.forEach(function (input) {
         if (input.catalog) {
           var link = el('a', 'Source dataset at the recorded version ↗', content, 'epi-forecast-source');
@@ -334,8 +347,9 @@
       tablePreview(content, result.prediction_table);
       var config = el('details', null, content);
       el('summary', 'Run configuration', config); el('pre', JSON.stringify(result.config, null, 2), config);
-      state.loaded = result.cacheable;
-      retry.hidden = result.cacheable;
+      state.loaded = result.cacheable && !chartError;
+      retry.hidden = state.loaded;
+      if (chartError) status.textContent = chartError.message;
     } catch (error) {
       status.textContent = error.message || 'Preview unavailable. Please retry.';
       retry.hidden = false;

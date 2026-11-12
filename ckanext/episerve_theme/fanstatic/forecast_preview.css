@@ -6,18 +6,21 @@
 .epi-forecast-controls select { max-width:100%; padding:.3rem; border:1px solid #b9c5d5; border-radius:.3rem; }
 .epi-forecast-controls .epi-forecast-series { display:block; flex:0 1 26rem; width:26rem; max-width:100%; min-width:0; }
 .epi-forecast-controls .epi-forecast-series select { display:block; width:100%; margin-top:.25rem; }
-.epi-forecast-chart { width:100%; min-height:280px; }
-.epi-forecast-chart svg { display:block; width:100%; height:280px; touch-action:pan-y; }
-.epi-forecast-tooltip,.epi-forecast-note { font-size:.85rem; color:#52657d; overflow-wrap:anywhere; }
-.epi-forecast-tooltip { min-height:2.5em; margin-bottom:0; }
+.epi-forecast-chart { width:100%; min-height:330px; min-width:0; }
+.epi-forecast-apex-tooltip { padding:.6rem .8rem; font-size:.8rem; max-width:22rem; white-space:normal; overflow-wrap:anywhere; }
+.epi-forecast-chart .apexcharts-tooltip { max-width:min(22rem, 90vw); }
+.epi-forecast-note { font-size:.85rem; color:#52657d; overflow-wrap:anywhere; }
 .epi-forecast-content pre { white-space:pre-wrap; overflow-wrap:anywhere; padding:.8rem; background:#f4f6fa; }
 .epi-forecast-content details { margin-top:.7rem; }
 .epi-forecast-table { overflow:auto; max-height:24rem; }
 .epi-forecast-table table { width:100%; font-size:.8rem; border-collapse:collapse; }
 .epi-forecast-table th,.epi-forecast-table td { padding:.35rem .5rem; border:1px solid #d5dce6; white-space:nowrap; }
 .epi-forecast-source { overflow-wrap:anywhere; }
-@media(max-width:600px) { .epi-forecast-panel { padding:.65rem; } .epi-forecast .epi-forecast-controls label::after { content:none; }
-.epi-forecast-controls label { flex-wrap:wrap; } .epi-forecast-controls .epi-forecast-series { flex-basis:100%; width:100%; } }
+@media(max-width:600px) { .epi-forecast-panel { padding:.65rem; } .epi-forecast-controls label { flex-wrap:wrap; } .epi-forecast-controls .epi-forecast-series { flex-basis:100%; width:100%; } }
 
 .epi-forecast-legend { font-size:.85rem; color:#334155; margin:.5rem 0; }
 .epi-forecast-content h4 { font-size:.95rem; color:var(--epi-navy,#1e3a5f); margin:1rem 0 .3rem; }
+
+.epi-forecast-full-range { border:0; background:transparent; color:#52657d; font-size:.75rem; padding:0 .2rem; white-space:nowrap; cursor:pointer; }
+.epi-forecast-chart .apexcharts-toolbar { max-width:none; gap:.15rem; }
+.epi-forecast-chart .apexcharts-toolbar-custom-icon { width:auto; }
