@@ -96,6 +96,15 @@
             initial_position: Math.round(viewStart / Math.max(1, points.length - (viewEnd - viewStart)) * 100)};
   }
 
+  /** Locate a visual connector only when the supplied series ends before the forecast. */
+  function forecastTransition(points) {
+    var first = points.findIndex(function (point) { return Object.prototype.hasOwnProperty.call(point, 'value'); });
+    var last = -1;
+    points.forEach(function (point, index) { if (Object.prototype.hasOwnProperty.call(point, 'history')) last = index; });
+    if (first < 0 || last < 0 || last >= first || !Number.isFinite(points[last].history) || !Number.isFinite(points[first].value)) return null;
+    return {from:last, to:first};
+  }
+
   /** Offer compatible input and prediction series together in one chart. */
   function combinedChart(parent, result) {
     var choices = [];
@@ -250,6 +259,14 @@
         });
         svgEl('path', {d:path, fill:'none', stroke:line[1], 'stroke-width':2, 'data-series':line[0]}, svg);
       });
+      var transition = forecastTransition(points);
+      if (transition) {
+        var connector = svgEl('path', {
+          d:'M' + x(transition.from) + ',' + y(points[transition.from].history) + ' L' + x(transition.to) + ',' + y(points[transition.to].value),
+          fill:'none', stroke:'#c62828', 'stroke-width':2, 'stroke-dasharray':'4 3', 'data-series':'transition'
+        }, svg);
+        svgEl('title', {}, connector, 'Transition from the last supplied observation to the first recorded prediction; no additional data points.');
+      }
       var boundary = points.findIndex(function (point) { return Object.prototype.hasOwnProperty.call(point, 'value'); });
       if (boundary >= 0) {
         svgEl('line', {x1:x(boundary), x2:x(boundary), y1:top, y2:bottom, stroke:'#64748b', 'stroke-dasharray':'4 4'}, svg);

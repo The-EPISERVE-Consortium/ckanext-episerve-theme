@@ -1,9 +1,10 @@
 .epi-forecast-panel { margin:1.2rem 0; padding:1rem; border:1px solid var(--epi-border,#d5dce6); border-radius:.5rem; min-width:0; }
 .epi-forecast-panel h3 { font-size:1.1rem; color:var(--epi-navy,#1e3a5f); }
 .epi-forecast-controls { display:flex; align-items:center; flex-wrap:wrap; gap:.6rem 1rem; margin:.75rem 0; }
+.epi-forecast .epi-forecast-controls label::after { content:none; }
 .epi-forecast-controls label { display:flex; align-items:center; gap:.5rem; margin:0; font-size:.85rem; }
 .epi-forecast-controls select { max-width:100%; padding:.3rem; border:1px solid #b9c5d5; border-radius:.3rem; }
-.epi-forecast-controls .epi-forecast-series { display:block; width:100%; }
+.epi-forecast-controls .epi-forecast-series { display:block; flex:0 1 26rem; width:26rem; max-width:100%; min-width:0; }
 .epi-forecast-controls .epi-forecast-series select { display:block; width:100%; margin-top:.25rem; }
 .epi-forecast-chart { width:100%; min-height:280px; }
 .epi-forecast-chart svg { display:block; width:100%; height:280px; touch-action:pan-y; }
@@ -15,7 +16,8 @@
 .epi-forecast-table table { width:100%; font-size:.8rem; border-collapse:collapse; }
 .epi-forecast-table th,.epi-forecast-table td { padding:.35rem .5rem; border:1px solid #d5dce6; white-space:nowrap; }
 .epi-forecast-source { overflow-wrap:anywhere; }
-@media(max-width:600px) { .epi-forecast-panel { padding:.65rem; } .epi-forecast-controls label { flex-wrap:wrap; } }
+@media(max-width:600px) { .epi-forecast-panel { padding:.65rem; } .epi-forecast .epi-forecast-controls label::after { content:none; }
+.epi-forecast-controls label { flex-wrap:wrap; } .epi-forecast-controls .epi-forecast-series { flex-basis:100%; width:100%; } }
 
 .epi-forecast-legend { font-size:.85rem; color:#334155; margin:.5rem 0; }
 .epi-forecast-content h4 { font-size:.95rem; color:var(--epi-navy,#1e3a5f); margin:1rem 0 .3rem; }

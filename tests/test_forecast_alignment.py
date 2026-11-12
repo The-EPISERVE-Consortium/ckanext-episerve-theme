@@ -13,10 +13,11 @@ def test_combined_chart_aligns_dates_weeks_positions_and_backtests():
     source = Path(__file__).parents[1] / 'ckanext/episerve_theme/fanstatic/forecast_preview.js'
     script = r'''
 const fs = require('fs'), vm = require('vm'), assert = require('assert');
-const source = fs.readFileSync(process.argv[1], 'utf8').replace('}());', 'window.combine = combine;}());');
+const source = fs.readFileSync(process.argv[1], 'utf8').replace('}());', 'window.combine = combine; window.forecastTransition = forecastTransition;}());');
 const context = {window:{}};
 vm.runInNewContext(source, context);
 const combine = context.window.combine;
+const transition = context.window.forecastTransition;
 /** Construct generic chart series for axis tests. */
 function series(axis, points, extras) {
   return Object.assign({axis, points, column:'value', label:'value', rows:points.length, groups:{}, duplicate_x:false}, extras || {});
@@ -29,6 +30,15 @@ assert.equal(combined.points[1].history, 2);
 assert.equal(combined.points[1].value, 3);
 assert.equal(combined.points[1].q90, 4);
 assert.equal(combined.unaligned, false);
+assert.equal(transition(combined.points), null); // Backtest observations continue into the forecast.
+let future = combine(series('day', [{x:'2026-01-01',value:1},{x:'2026-01-02',value:2}]),
+                     series('day', [{x:'2026-01-03',value:3},{x:'2026-01-04',value:4}]));
+assert.equal(transition(future.points).from, 1);
+assert.equal(transition(future.points).to, 2);
+assert.equal(future.points.length, 4); // Connector never inserts observations or predictions.
+future.points[1].history = null;
+assert.equal(transition(future.points), null); // Preserve actual missing observations.
+assert.equal(transition([{x:'1', value:3}]), null);
 input = series('week', [{x:'2026-W01',value:1}]);
 output = series('date', [{x:'2025-12-29',value:2}]);
 combined = combine(input, output);
