@@ -252,7 +252,7 @@
         {name:'Transition', type:'line', data:connector},
         {name:'Observed values', type:'line', data:lineData('observed')}
       ],
-      colors:['#c62828', '#111827', '#c62828', '#c62828', '#15803d'],
+      colors:['#c62828', '#111827', '#c62828', '#c62828', '#111827'],
       stroke:{curve:'straight', width:[0, 2, 2, 2, 2], dashArray:0},
       fill:{type:'solid', opacity:[0.16, 1, 1, 1, 1]},
       markers:{size:[0, 0, 3, 0, 2], strokeWidth:0, hover:{sizeOffset:2}},
@@ -296,7 +296,7 @@
     var note = el('p', '', panel, 'epi-forecast-note');
     if (!allSeries.length) { note.textContent = 'A reliable chart mapping is unavailable. Inspect the recorded files in Resources.'; return; }
     var series = allSeries[0];
-    if (series.observed_rows) legend.textContent += ' · Green: observed values';
+    if (series.observed_rows) legend.textContent += ' · Black: observed values';
     if (series.unaligned) {
       note.textContent = 'These recorded axes cannot be aligned reliably without guessing. Inspect the recorded input and predictions in Resources.'; return;
     }
