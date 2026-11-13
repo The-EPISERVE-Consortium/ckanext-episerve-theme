@@ -155,3 +155,35 @@ def test_steps_of_other_objects_keep_their_link():
     bench = _event("benchmark/3", "Q1792274309877", "benchmark", "2026-10-17T21:58:29Z", [], [])
     assert l.view({"object": "Q1792274835520", "events": [bench]}, DOIP)["steps"][0]["url"] == "/dataset/q1792274309877"
     assert l.view({"object": "Q1792274309877", "events": [bench]}, DOIP)["steps"][0]["url"] is None
+
+
+def test_pinned_model_step_and_box_link_to_the_same_exact_image_as_additional_info():
+    """Link the current run's diagram box and Step cell to its pinned manifest."""
+    from urllib.parse import parse_qs, urlsplit
+    from ckanext.episerve_theme.model_links import image_links
+
+    image = 'ghcr.io/the-episerve-consortium/model__prediction__generic__timesfm'
+    digest = 'sha256:' + 'a' * 64
+    event = _event('model-runner/model__prediction__generic__timesfm', 'Q1794557344025', 'run',
+                   '2026-11-13T08:10:15Z', [], [])
+    event['run']['facets']['episerve'].update(model_image=image + '@' + digest, model_digest=digest)
+    result = l.view({'object': 'Q1794557344025', 'events': [event]}, DOIP)
+    expected = image_links(image + '@' + digest)['digest_url']
+    assert result['steps'][0]['label'] == 'model run: timesfm'
+    assert result['steps'][0]['url'] == expected
+    assert result['links']['j0']['url'] == expected
+    assert parse_qs(urlsplit(expected).query) == {'image': [image + '@' + digest]}
+
+
+def test_separate_recorded_digest_is_supported_and_conflicting_versions_are_rejected():
+    """Do not use a moving tag or a conflicting digest as an execution link."""
+    image = 'ghcr.io/example/model'
+    digest = 'sha256:' + 'a' * 64
+    event = _event('model-runner/model', 'Q1794557344025', 'run', '', [], [])
+    facet = event['run']['facets']['episerve']
+    facet.update(model_image=image, model_digest=digest)
+    assert l.view({'object': 'Q1794557344025', 'events': [event]}, DOIP)['links']['j0']['url']
+    facet.update(model_image=image + '@' + digest, model_digest='sha256:' + 'b' * 64)
+    assert l.view({'object': 'Q1794557344025', 'events': [event]}, DOIP)['steps'][0]['url'] is None
+    facet.update(model_image='javascript:alert(1)', model_digest=digest)
+    assert l.view({'object': 'Q1794557344025', 'events': [event]}, DOIP)['links']['j0']['url'] == ''

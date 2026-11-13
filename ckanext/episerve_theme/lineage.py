@@ -10,6 +10,8 @@ on its own.
 import re
 from urllib.parse import urlsplit
 
+from ckanext.episerve_theme.model_links import image_links
+
 _QID = re.compile(r"[Qq]\d{6,}")
 _PLATFORM_FILE = re.compile(r"(Q\d{6,})(?:/(.+))?")
 _OLD_BENCHMARK_FILE = re.compile(r"(\d+)/([^/]+)")   # benchmark files filed under the benchmark id (older layout)
@@ -101,7 +103,15 @@ def _dataset_info(entry: dict, doip_namespace: str, api_url: str = "") -> dict:
 
 
 def _job_info(event: dict) -> dict:
-    """Label, kind, time and link of an event's job."""
+    """Describe an event's job and its recorded execution link.
+
+    Args:
+        event: OpenLineage event including the EPISERVE run facet.
+
+    Returns:
+        Job display fields. Pinned model runs link to the exact container
+        manifest, using the same destination as Additional Info.
+    """
     job = (event.get("job") or {}).get("name", "")
     facet = ((event.get("run") or {}).get("facets") or {}).get("episerve") or {}
     kind, qid = facet.get("kind", ""), facet.get("qid", "")
@@ -118,6 +128,15 @@ def _job_info(event: dict) -> dict:
         label = job
     # a download links to the downloader's repository; its files link to the dataset's page
     url = DOWNLOADER_REPO_URL if group == "dataset-downloader" else (f"/dataset/{qid.lower()}" if qid else None)
+    if group == "model-runner":
+        image = facet.get("model_image")
+        digest = facet.get("model_digest")
+        reference = image
+        if isinstance(image, str) and "@" not in image and isinstance(digest, str):
+            reference = f"{image}@{digest}"
+        recorded = image_links(reference)
+        if recorded and (not digest or digest == recorded["digest"]):
+            url = recorded["digest_url"]
     return {"label": label, "kind": kind, "time": when, "qid": qid, "source_changed": changed, "url": url}
 
 

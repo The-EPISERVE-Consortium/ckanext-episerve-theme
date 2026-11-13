@@ -3,9 +3,10 @@
 from datetime import datetime
 import json
 import re
-from urllib.parse import parse_qs, urlencode, urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from ckanext.episerve_theme.versions import valid_commit
+from ckanext.episerve_theme.model_links import image_links
 
 _QID = re.compile(r"Q\d+", re.IGNORECASE)
 
@@ -123,11 +124,8 @@ def model_snapshot(fdo, model):
     agent = provenance.get('prov:wasAssociatedWith') or {}
     if not isinstance(agent, dict):
         return None
-    reference = agent.get('@id')
-    if not isinstance(reference, str):
-        return None
-    match = re.fullmatch(r'(ghcr\.io/([a-zA-Z0-9._-]+)/([a-zA-Z0-9._-]+))@(sha256:[0-9a-f]{64})', reference)
-    if not match:
+    links = image_links(agent.get('@id'))
+    if not links:
         return None
     properties = agent.get('schema:additionalProperty') or []
     if isinstance(properties, dict):
@@ -141,18 +139,17 @@ def model_snapshot(fdo, model):
             if isinstance(name, str) and isinstance(value, str):
                 # A conflicting field must not be used to claim an exact snapshot.
                 values[name] = value if name not in values or values[name] == value else None
-    digest = match[4]
+    digest = links['digest']
     if 'model_digest' in values and values['model_digest'] != digest:
         return None
     source = values.get('model_source_revision')
     if not isinstance(source, str) or not re.fullmatch(r'[0-9a-fA-F]{40}|[0-9a-fA-F]{64}', source):
         source = None
     repository_url = None
-    if match[2].lower() == 'the-episerve-consortium' and match[3].lower() == model.lower():
-        repository_url = f'https://github.com/The-EPISERVE-Consortium/{match[3]}'
-    return {'image': match[1], 'reference': reference, 'digest': digest,
-            'image_url': f'https://{match[1]}',
-            'digest_url': 'https://explore.ggcr.dev/?' + urlencode({'image': reference}),
+    owner, repository = links['image'].removeprefix('ghcr.io/').split('/', 1)
+    if owner.lower() == 'the-episerve-consortium' and repository.lower() == model.lower():
+        repository_url = f'https://github.com/The-EPISERVE-Consortium/{repository}'
+    return {**links,
             'tag': values.get('model_tag'), 'source_revision': source,
             'repository_url': repository_url,
             'source_url': f'{repository_url}/tree/{source}' if repository_url and source else None}
