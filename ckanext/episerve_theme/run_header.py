@@ -100,6 +100,56 @@ def pin_links(header, fdo, doip_namespace):
             sources.append({**source, 'version': commit})
     model_pins = pins.get(header.get('model_qid'), [])
     return {**header, 'sources': sources,
+            'model_snapshot': model_snapshot(fdo, header['model']),
             'model_version': model_pins[0] if len(model_pins) == 1 else None,
             'model_version_note': ('version ambiguous' if len(model_pins) > 1 else
                                    ('version not recorded' if fdo else 'version unavailable'))}
+
+
+def model_snapshot(fdo, model):
+    """Extract the executed image snapshot from a run's recorded provenance.
+
+    Args:
+        fdo: Run FDO at the displayed lakeFS version, or None.
+        model: Model repository name recorded in the catalog run.
+
+    Returns:
+        Snapshot fields for Additional Info, or None for legacy metadata.
+        GitHub links use the source Git SHA, not the container digest. Source
+        repositories are mapped only for matching EPISERVE model images.
+    """
+    provenance = (fdo or {}).get('provenance') or {}
+    agent = provenance.get('prov:wasAssociatedWith') or {}
+    if not isinstance(agent, dict):
+        return None
+    reference = agent.get('@id')
+    if not isinstance(reference, str):
+        return None
+    match = re.fullmatch(r'(ghcr\.io/([a-zA-Z0-9._-]+)/([a-zA-Z0-9._-]+))@(sha256:[0-9a-f]{64})', reference)
+    if not match:
+        return None
+    properties = agent.get('schema:additionalProperty') or []
+    if isinstance(properties, dict):
+        properties = [properties]
+    values = {}
+    if isinstance(properties, list):
+        for prop in properties:
+            if not isinstance(prop, dict):
+                continue
+            name, value = prop.get('schema:name'), prop.get('schema:value')
+            if isinstance(name, str) and isinstance(value, str):
+                # A conflicting field must not be used to claim an exact snapshot.
+                values[name] = value if name not in values or values[name] == value else None
+    digest = match[4]
+    if 'model_digest' in values and values['model_digest'] != digest:
+        return None
+    source = values.get('model_source_revision')
+    if not isinstance(source, str) or not re.fullmatch(r'[0-9a-fA-F]{40}|[0-9a-fA-F]{64}', source):
+        source = None
+    repository_url = None
+    if match[2].lower() == 'the-episerve-consortium' and match[3].lower() == model.lower():
+        repository_url = f'https://github.com/The-EPISERVE-Consortium/{match[3]}'
+    return {'image': match[1], 'reference': reference, 'digest': digest,
+            'tag': values.get('model_tag'), 'source_revision': source,
+            'repository_url': repository_url,
+            'source_url': f'{repository_url}/tree/{source}' if repository_url and source else None}

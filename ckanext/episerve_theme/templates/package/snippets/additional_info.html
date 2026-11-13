@@ -6,16 +6,44 @@
    as the "Created" row. The other extras get readable names (labels.py), and date-time values are shown like
    CKAN's own dates. #}
 {% block package_additional_info %}
+  {% set snapshot = model_snapshot if model_snapshot is defined else none %}
+  {% set source_url = pkg_dict.url %}
+  {% if snapshot and snapshot.source_url and source_url and source_url.rstrip('/').removesuffix('.git') | lower == snapshot.repository_url | lower %}
+    {% set source_url = snapshot.source_url %}
+  {% endif %}
   {% if pkg_dict.url %}
     <tr>
       <th scope="row" class="dataset-label">{{ _('Source') }}</th>
-      {% if h.is_url(pkg_dict.url) %}
+      {% if h.is_url(source_url) %}
         <td class="dataset-details" property="foaf:homepage">
-          <a href="{{ pkg_dict.url }}" rel="foaf:homepage" target="_blank">{{ pkg_dict.url }}</a>
+          <a href="{{ source_url }}" rel="foaf:homepage" target="_blank">{{ source_url }}</a>
         </td>
       {% else %}
-        <td class="dataset-details" property="foaf:homepage">{{ pkg_dict.url }}</td>
+        <td class="dataset-details" property="foaf:homepage">{{ source_url }}</td>
       {% endif %}
+    </tr>
+  {% endif %}
+
+  {% if snapshot %}
+    <tr>
+      <th scope="row" class="dataset-label">{{ _('Container image') }}</th>
+      <td class="dataset-details"><code style="overflow-wrap:anywhere">{{ snapshot.image }}</code></td>
+    </tr>
+    <tr>
+      <th scope="row" class="dataset-label">{{ _('Requested image tag') }}</th>
+      <td class="dataset-details">{{ snapshot.tag or _('Not recorded') }}</td>
+    </tr>
+    <tr>
+      <th scope="row" class="dataset-label">{{ _('Image digest') }}</th>
+      <td class="dataset-details"><code style="overflow-wrap:anywhere">{{ snapshot.digest }}</code></td>
+    </tr>
+    <tr>
+      <th scope="row" class="dataset-label">{{ _('Source Git commit') }}</th>
+      <td class="dataset-details">
+        {% if snapshot.source_url %}<a href="{{ snapshot.source_url }}" target="_blank" rel="noopener noreferrer"><code style="overflow-wrap:anywhere">{{ snapshot.source_revision }}</code></a>
+        {% elif snapshot.source_revision %}<code style="overflow-wrap:anywhere">{{ snapshot.source_revision }}</code>
+        {% else %}{{ _('Unavailable') }}{% endif %}
+      </td>
     </tr>
   {% endif %}
 
@@ -77,7 +105,7 @@
     {% set entry_type = h.get_pkg_dict_extra(pkg_dict, 'dataset_type') %}
     {% for extra in h.sorted_extras(pkg_dict.extras) %}
       {% set key, value = extra %}
-      {% if key not in ('attribution', 'created') and not h.episerve_is_card_extra(key) %}
+      {% if key not in ('attribution', 'created') and not h.episerve_is_card_extra(key) and not (snapshot and key in ('docker_image', 'docker_tag', 'model_digest', 'model_source_revision')) %}
       {% set when = h.episerve_as_datetime(value) %}
       <tr rel="dc:relation" resource="_:extra{{ i }}">
         <th scope="row" class="dataset-label" property="rdfs:label" title="{{ key }}">{{ _(h.episerve_extra_label(key, entry_type)) }}</th>
