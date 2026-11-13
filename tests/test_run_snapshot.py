@@ -147,3 +147,29 @@ def test_recorded_tags_are_escaped():
     html = render_info(model_snapshot(fdo, MODEL))
     assert '<script>' not in html
     assert '&lt;script&gt;' in html
+
+
+def test_image_and_digest_links_use_distinct_registry_destinations():
+    """The image opens its package and the digest opens the exact manifest."""
+    from urllib.parse import parse_qs, urlsplit
+
+    snapshot = model_snapshot(recorded_fdo(), MODEL)
+    assert snapshot['image_url'] == 'https://' + IMAGE
+    target = urlsplit(snapshot['digest_url'])
+    assert target.scheme == 'https' and target.netloc == 'explore.ggcr.dev'
+    assert parse_qs(target.query) == {'image': [IMAGE + '@' + DIGEST]}
+    html = render_info(snapshot)
+    assert f'href="{snapshot["image_url"]}"' in html
+    assert f'href="{snapshot["digest_url"]}"' in html
+    assert 'rel="noopener noreferrer"' in html
+
+
+def test_digest_link_does_not_follow_a_moving_tag():
+    """An older digest stays the link target even if its requested tag changes."""
+    from urllib.parse import parse_qs, urlsplit
+
+    record = recorded_fdo()
+    record['provenance']['prov:wasAssociatedWith']['schema:additionalProperty'][0]['schema:value'] = 'v2'
+    snapshot = model_snapshot(record, MODEL)
+    assert parse_qs(urlsplit(snapshot['digest_url']).query)['image'] == [IMAGE + '@' + DIGEST]
+    assert 'v2' not in snapshot['digest_url']

@@ -27,7 +27,7 @@
   {% if snapshot %}
     <tr>
       <th scope="row" class="dataset-label">{{ _('Container image') }}</th>
-      <td class="dataset-details"><code style="overflow-wrap:anywhere">{{ snapshot.image }}</code></td>
+      <td class="dataset-details"><a href="{{ snapshot.image_url }}" target="_blank" rel="noopener noreferrer"><code style="overflow-wrap:anywhere">{{ snapshot.image }}</code></a></td>
     </tr>
     <tr>
       <th scope="row" class="dataset-label">{{ _('Requested image tag') }}</th>
@@ -35,7 +35,7 @@
     </tr>
     <tr>
       <th scope="row" class="dataset-label">{{ _('Image digest') }}</th>
-      <td class="dataset-details"><code style="overflow-wrap:anywhere">{{ snapshot.digest }}</code></td>
+      <td class="dataset-details"><a href="{{ snapshot.digest_url }}" target="_blank" rel="noopener noreferrer" title="{{ _('View exact image manifest in Registry Explorer') }}"><code style="overflow-wrap:anywhere">{{ snapshot.digest }}</code></a></td>
     </tr>
     <tr>
       <th scope="row" class="dataset-label">{{ _('Source Git commit') }}</th>

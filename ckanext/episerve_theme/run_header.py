@@ -3,7 +3,7 @@
 from datetime import datetime
 import json
 import re
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, urlencode, urlsplit
 
 from ckanext.episerve_theme.versions import valid_commit
 
@@ -116,7 +116,8 @@ def model_snapshot(fdo, model):
     Returns:
         Snapshot fields for Additional Info, or None for legacy metadata.
         GitHub links use the source Git SHA, not the container digest. Source
-        repositories are mapped only for matching EPISERVE model images.
+        repositories are mapped only for matching EPISERVE model images. The
+        digest links to Registry Explorer using the immutable image reference.
     """
     provenance = (fdo or {}).get('provenance') or {}
     agent = provenance.get('prov:wasAssociatedWith') or {}
@@ -150,6 +151,8 @@ def model_snapshot(fdo, model):
     if match[2].lower() == 'the-episerve-consortium' and match[3].lower() == model.lower():
         repository_url = f'https://github.com/The-EPISERVE-Consortium/{match[3]}'
     return {'image': match[1], 'reference': reference, 'digest': digest,
+            'image_url': f'https://{match[1]}',
+            'digest_url': 'https://explore.ggcr.dev/?' + urlencode({'image': reference}),
             'tag': values.get('model_tag'), 'source_revision': source,
             'repository_url': repository_url,
             'source_url': f'{repository_url}/tree/{source}' if repository_url and source else None}
