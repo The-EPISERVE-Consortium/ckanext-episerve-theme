@@ -12,21 +12,6 @@
     return node;
   }
 
-  /** Add a bounded table retaining recorded values for inspection and fallback. */
-  function tablePreview(parent, table) {
-    if (!table) return;
-    var details = el('details', null, parent);
-    el('summary', 'Data table · first ' + table.rows.length + ' of ' + table.total + ' rows', details);
-    var wrap = el('div', null, details, 'epi-forecast-table');
-    var tableEl = el('table', null, wrap), tr = el('tr', null, el('thead', null, tableEl));
-    table.columns.forEach(function (column) { var th = el('th', column, tr); th.scope = 'col'; });
-    var body = el('tbody', null, tableEl);
-    table.rows.forEach(function (row) {
-      var line = el('tr', null, body);
-      row.forEach(function (cell) { el('td', cell, line); });
-    });
-  }
-
   /** Parse only explicit calendar dates and ISO weeks, preserving their meaning. */
   function calendar(value) {
     var text = String(value), week = /^(\d{4})-W(\d{2})$/.exec(text);
@@ -268,9 +253,9 @@
         {name:'Observed values', type:'line', data:lineData('observed')}
       ],
       colors:['#c62828', '#111827', '#c62828', '#c62828', '#15803d'],
-      stroke:{curve:'straight', width:[0, 2, 2, 2, 2], dashArray:[0, 0, 0, 5, 0]},
+      stroke:{curve:'straight', width:[0, 2, 2, 2, 2], dashArray:0},
       fill:{type:'solid', opacity:[0.16, 1, 1, 1, 1]},
-      markers:{size:[0, 0, 3, 0, 2], hover:{sizeOffset:2}},
+      markers:{size:[0, 0, 3, 0, 2], strokeWidth:0, hover:{sizeOffset:2}},
       dataLabels:{enabled:false}, legend:{show:false},
       xaxis:{type:dateAxis ? 'datetime' : 'numeric', min:range.min, max:range.max,
              tickAmount:4, labels:{datetimeUTC:true, hideOverlappingLabels:true, formatter:formatX,
@@ -307,15 +292,15 @@
   async function chart(parent, title, allSeries) {
     var panel = el('section', null, parent, 'epi-forecast-panel');
     el('h3', title, panel);
-    var legend = el('p', 'Black: input supplied · Red: recorded predictions · Shading: reported q10–q90 · Dashed join: transition', panel, 'epi-forecast-legend');
+    var legend = el('p', 'Black: input supplied · Red: recorded predictions · Shading: reported q10–q90', panel, 'epi-forecast-legend');
     var note = el('p', '', panel, 'epi-forecast-note');
-    if (!allSeries.length) { note.textContent = 'A reliable chart mapping is unavailable. Inspect the recorded data below.'; return; }
+    if (!allSeries.length) { note.textContent = 'A reliable chart mapping is unavailable. Inspect the recorded files in Resources.'; return; }
     var series = allSeries[0];
     if (series.observed_rows) legend.textContent += ' · Green: observed values';
     if (series.unaligned) {
-      note.textContent = 'These recorded axes cannot be aligned reliably without guessing. Input and predictions remain available in the data tables below.'; return;
+      note.textContent = 'These recorded axes cannot be aligned reliably without guessing. Inspect the recorded input and predictions in Resources.'; return;
     }
-    if (series.duplicate_x) { note.textContent = 'Repeated axis values make a single line ambiguous. Use the series selector or data table.'; return; }
+    if (series.duplicate_x) { note.textContent = 'Repeated axis values make a single line ambiguous. Use the series selector or inspect the recorded files in Resources.'; return; }
     if (!series.points.length) { note.textContent = 'No values available.'; return; }
     note.textContent = series.axis + ' · ' + series.input_rows + ' supplied rows · ' + series.forecast_rows + ' predictions' + (series.observed_rows ? ' · ' + series.observed_rows + ' observed values' : '') +
       (series.sampled ? ' · input display is sampled' : '') + '. Input supplied does not imply every observation was used internally.';
@@ -352,43 +337,20 @@
       destroyCharts();
       content.replaceChildren();
       status.textContent = 'Run artifact version ' + result.artifact_commit.slice(0, 12) + ' · ' + (result.cached ? 'Saved preview' : 'Preview prepared');
-      result.warnings.forEach(function (message) { el('p', message, content, 'epi-forecast-note'); });
+      result.warnings.forEach(function (message) {
+        el('p', message.replace('The recorded output is shown as a table.', 'Inspect the recorded output in Resources.'), content, 'epi-forecast-note');
+      });
+      result.inputs.forEach(function (input) {
+        if (input.observation_note) el('p', input.observation_note, content, 'epi-forecast-note');
+      });
       var chartError = null;
       try {
         await loadApexCharts();
         await combinedChart(content, result);
       } catch (error) {
         chartError = error;
-        el('p', error.message + ' The recorded data remain available below.', content, 'epi-forecast-note');
+        el('p', error.message + ' Recorded files remain available in Resources.', content, 'epi-forecast-note');
       }
-      result.inputs.forEach(function (input) {
-        if (input.catalog) {
-          var link = el('a', 'Source dataset at the recorded version ↗', content, 'epi-forecast-source');
-          link.href = input.catalog; link.target = '_blank'; link.rel = 'noopener';
-        }
-        el('h4', 'Input supplied · ' + input.filename, content);
-        tablePreview(content, input.table);
-        if (input.observation_note) el('p', input.observation_note, content, 'epi-forecast-note');
-        if (input.reference) {
-          el('h4', input.reference.kind === 'source' ? 'Observed values · pinned source' : 'Observed values · benchmark reference', content);
-          var referenceLink = el('a', 'Reference data at the recorded version ↗', content, 'epi-forecast-source');
-          referenceLink.href = input.reference.url; referenceLink.target = '_blank'; referenceLink.rel = 'noopener';
-          tablePreview(content, input.reference.table);
-          if (input.reference.kind === 'source' && input.reference.sql) {
-            var observedSql = el('details', null, content);
-            el('summary', 'Observation preview SQL', observedSql);
-            el('pre', input.reference.sql, observedSql);
-          }
-        }
-        if (input.sql && input.sql.trim()) {
-          var sql = el('details', null, content);
-          el('summary', 'Recorded workflow SQL', sql); el('pre', input.sql, sql);
-        }
-      });
-      el('h4', 'Recorded predictions', content);
-      tablePreview(content, result.prediction_table);
-      var config = el('details', null, content);
-      el('summary', 'Run configuration', config); el('pre', JSON.stringify(result.config, null, 2), config);
       state.loaded = result.cacheable && !chartError;
       retry.hidden = state.loaded;
       if (chartError) status.textContent = chartError.message;

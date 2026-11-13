@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import jinja2
 import pytest
 
-from ckanext.episerve_theme import labels
+from ckanext.episerve_theme import extra_links, labels
 from ckanext.episerve_theme.run_header import model_snapshot
 
 MODEL = 'model__prediction__generic__timesfm'
@@ -35,13 +35,14 @@ def recorded_fdo(source=SOURCE):
     }}}
 
 
-def render_info(snapshot=None, source_url='', extras=None):
+def render_info(snapshot=None, source_url='', extras=None, run_header=None):
     """Render the production Additional Info snippet with minimal CKAN helpers.
 
     Args:
         snapshot: Prepared recorded image snapshot.
         source_url: Catalog Source link.
         extras: Catalog extras to render.
+        run_header: Recorded source/model versions used for catalog navigation.
 
     Returns:
         Autoescaped Additional Info table HTML.
@@ -58,11 +59,12 @@ def render_info(snapshot=None, source_url='', extras=None):
         sorted_extras=lambda items: [(item['key'], item['value']) for item in items],
         episerve_is_card_extra=lambda key: False, episerve_as_datetime=lambda value: None,
         episerve_extra_label=labels.label, episerve_extra_value=labels.value,
+        episerve_extra_links=extra_links.links, episerve_signed_url=lambda url: url,
     )
     env = jinja2.Environment(autoescape=True)
     return env.from_string(template).render(
         pkg_dict={'id': 'run', 'url': source_url, 'extras': extras or []},
-        model_snapshot=snapshot, h=helpers, _=lambda text: text,
+        model_snapshot=snapshot, run_header=run_header, h=helpers, _=lambda text: text,
     )
 
 

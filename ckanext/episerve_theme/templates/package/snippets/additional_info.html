@@ -107,11 +107,16 @@
       {% set key, value = extra %}
       {% if key not in ('attribution', 'created') and not h.episerve_is_card_extra(key) and not (snapshot and key in ('docker_image', 'docker_tag', 'model_digest', 'model_source_revision')) %}
       {% set when = h.episerve_as_datetime(value) %}
+      {% set links = h.episerve_extra_links(key, value, run_header if run_header is defined else none) %}
       <tr rel="dc:relation" resource="_:extra{{ i }}">
         <th scope="row" class="dataset-label" property="rdfs:label" title="{{ key }}">{{ _(h.episerve_extra_label(key, entry_type)) }}</th>
         <td class="dataset-details" property="rdf:value">
           {% if when %}
             {% snippet 'snippets/local_friendly_datetime.html', datetime_obj=when %}
+          {% elif links %}
+            {% for link in links %}
+              <div><a href="{{ h.episerve_signed_url(link.url) if link.file else link.url }}"{% if link.file %} target="_blank" rel="noopener noreferrer"{% endif %} style="overflow-wrap:anywhere">{{ link.label }}</a></div>
+            {% endfor %}
           {% else %}
             {{ h.episerve_extra_value(key, value) }}
           {% endif %}
