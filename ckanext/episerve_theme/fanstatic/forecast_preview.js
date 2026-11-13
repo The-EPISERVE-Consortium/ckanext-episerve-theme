@@ -43,8 +43,17 @@
     return Number.isFinite(timestamp) ? timestamp : null;
   }
 
-  /** Align one supplied series with its predictions without inferring model usage. */
-  function combine(input, forecast) {
+  /** Align supplied input, predictions, and explicitly associated observations.
+   *
+   * Args:
+   *   input: Selected supplied-input series, or null.
+   *   forecast: Selected recorded-prediction series, or null.
+   *   reference: Matching benchmark observation series, or null.
+   *
+   * Returns:
+   *   Combined chart points; observed values appear only at prediction coordinates.
+   */
+  function combine(input, forecast, reference) {
     var inputs = input ? input.points : [], outputs = forecast ? forecast.points : [];
     var allDates = inputs.concat(outputs).every(function (point) { return calendar(point.x) !== null; });
     var positional = input && forecast && forecast.position_axis && input.row_positions;
@@ -72,6 +81,18 @@
       });
     }
     add(inputs, true); add(outputs, false);
+    // Only overlay observed values at existing prediction coordinates. Never
+    // guess row positions or extend the model's supplied history with truth.
+    if (reference && !reference.duplicate_x && !unaligned) {
+      reference.points.forEach(function (point) {
+        var metric = allDates ? calendar(point.x) : (!positional && sameAxis && reference.axis === (forecast || input).axis && allNumeric ? Number(point.x) : null);
+        if ((allDates && metric === null) || positional) return;
+        if (!allDates && reference.axis !== (forecast || input).axis) return;
+        var key = metric === null ? String(point.x) : String(metric);
+        var recorded = byKey.get(key);
+        if (recorded && Object.prototype.hasOwnProperty.call(recorded, 'value')) recorded.observed = point.value;
+      });
+    }
     var points = Array.from(byKey.values()).sort(function (a, b) { return a.axis_value - b.axis_value; });
     var first = points.findIndex(function (point) { return Object.prototype.hasOwnProperty.call(point, 'value'); });
     var last = points.length - 1;
@@ -80,7 +101,8 @@
     var viewEnd = Math.max(viewStart + 2, last + 1);
     return {column: forecast ? forecast.column : input.column, label: forecast ? forecast.label : input.label,
             date_axis: allDates, axis: allDates ? 'Date' : (positional ? 'Input row position' : (forecast ? forecast.axis : input.axis)),
-            points: points, input_rows: input ? input.rows : 0, forecast_rows: forecast ? forecast.rows : 0,
+            points: points, observed_rows: points.filter(function (point) { return Object.prototype.hasOwnProperty.call(point, 'observed'); }).length,
+            input_rows: input ? input.rows : 0, forecast_rows: forecast ? forecast.rows : 0,
             sampled: Boolean(input && input.sampled || forecast && forecast.sampled),
             duplicate_x: Boolean(input && input.duplicate_x || forecast && forecast.duplicate_x), unaligned: unaligned,
             initial_zoom: Math.min(100, Math.max(1, Math.ceil((viewEnd - viewStart) / Math.max(1, points.length) * 100))),
@@ -100,7 +122,7 @@
   function combinedChart(parent, result) {
     var choices = [];
     result.inputs.forEach(function (input) {
-      input.series.forEach(function (series) { choices.push({series:series, filename:input.filename}); });
+      input.series.forEach(function (series) { choices.push({series:series, filename:input.filename, reference:input.reference}); });
     });
     var controls = el('div', null, parent, 'epi-forecast-controls');
     var forecastLabel = el('label', 'Prediction series', controls, 'epi-forecast-series');
@@ -119,7 +141,12 @@
       host.replaceChildren();
       var input = selectedInputs[Number(inputSelect.value)];
       var forecast = result.predictions[Number(forecasts.value)];
-      var merged = input || forecast ? [combine(input && input.series, forecast)] : [];
+      var references = input && input.reference && forecast ? input.reference.series.filter(function (series) {
+        return series.column === forecast.column && Object.keys(series.groups).every(function (key) {
+          return series.groups[key] === forecast.groups[key] || series.groups[key] === input.series.groups[key];
+        });
+      }) : [];
+      var merged = input || forecast ? [combine(input && input.series, forecast, references.length === 1 ? references[0] : null)] : [];
       try {
         await chart(host, 'Input supplied & recorded predictions', merged);
       } finally {
@@ -237,12 +264,13 @@
         {name:'Reported q10–q90', type:hasBand ? 'rangeArea' : 'line', data:band},
         {name:'Input supplied', type:'line', data:lineData('history')},
         {name:'Recorded predictions', type:'line', data:forecast},
-        {name:'Transition', type:'line', data:connector}
+        {name:'Transition', type:'line', data:connector},
+        {name:'Observed values', type:'line', data:lineData('observed')}
       ],
-      colors:['#c62828', '#111827', '#c62828', '#c62828'],
-      stroke:{curve:'straight', width:[0, 2, 2, 2], dashArray:[0, 0, 0, 5]},
-      fill:{type:'solid', opacity:[0.16, 1, 1, 1]},
-      markers:{size:[0, 0, 3, 0], hover:{sizeOffset:2}},
+      colors:['#c62828', '#111827', '#c62828', '#c62828', '#15803d'],
+      stroke:{curve:'straight', width:[0, 2, 2, 2, 2], dashArray:[0, 0, 0, 5, 0]},
+      fill:{type:'solid', opacity:[0.16, 1, 1, 1, 1]},
+      markers:{size:[0, 0, 3, 0, 2], hover:{sizeOffset:2}},
       dataLabels:{enabled:false}, legend:{show:false},
       xaxis:{type:dateAxis ? 'datetime' : 'numeric', min:range.min, max:range.max,
              tickAmount:4, labels:{datetimeUTC:true, hideOverlappingLabels:true, formatter:formatX,
@@ -251,7 +279,7 @@
               formatter:function (value) { return Number.isFinite(value) ? Number(value.toPrecision(5)).toLocaleString() : ''; }}},
       grid:{borderColor:'#e2e8f0', padding:{left:8, right:12}},
       annotations:{xaxis:forecast.length ? [{x:forecast[0].x, borderColor:'#64748b', strokeDashArray:4}] : []},
-      tooltip:{shared:false, intersect:false, enabledOnSeries:[0, 1, 2],
+      tooltip:{shared:false, intersect:false, enabledOnSeries:[0, 1, 2, 4],
         custom:function (context) {
           var entry = context.w.config.series[context.seriesIndex].data[context.dataPointIndex];
           if (!entry) return '';
@@ -266,6 +294,7 @@
             if (point.input_x && point.input_x !== point.x) el('div', 'Input label: ' + point.input_x, box);
           }
           if (Object.prototype.hasOwnProperty.call(point, 'value')) el('div', 'Prediction: ' + (point.value === null ? 'missing' : point.value), box);
+          if (Object.prototype.hasOwnProperty.call(point, 'observed')) el('div', 'Observed value: ' + (point.observed === null ? 'missing' : point.observed), box);
           if (Number.isFinite(point.q10) && Number.isFinite(point.q90)) el('div', 'Reported q10: ' + point.q10 + ' · q90: ' + point.q90, box);
           return box.outerHTML;
         }
@@ -278,16 +307,17 @@
   async function chart(parent, title, allSeries) {
     var panel = el('section', null, parent, 'epi-forecast-panel');
     el('h3', title, panel);
-    el('p', 'Black: input supplied · Red: recorded predictions · Shading: reported q10–q90 · Dashed join: transition', panel, 'epi-forecast-legend');
+    var legend = el('p', 'Black: input supplied · Red: recorded predictions · Shading: reported q10–q90 · Dashed join: transition', panel, 'epi-forecast-legend');
     var note = el('p', '', panel, 'epi-forecast-note');
     if (!allSeries.length) { note.textContent = 'A reliable chart mapping is unavailable. Inspect the recorded data below.'; return; }
     var series = allSeries[0];
+    if (series.observed_rows) legend.textContent += ' · Green: observed values';
     if (series.unaligned) {
       note.textContent = 'These recorded axes cannot be aligned reliably without guessing. Input and predictions remain available in the data tables below.'; return;
     }
     if (series.duplicate_x) { note.textContent = 'Repeated axis values make a single line ambiguous. Use the series selector or data table.'; return; }
     if (!series.points.length) { note.textContent = 'No values available.'; return; }
-    note.textContent = series.axis + ' · ' + series.input_rows + ' supplied rows · ' + series.forecast_rows + ' predictions' +
+    note.textContent = series.axis + ' · ' + series.input_rows + ' supplied rows · ' + series.forecast_rows + ' predictions' + (series.observed_rows ? ' · ' + series.observed_rows + ' observed values' : '') +
       (series.sampled ? ' · input display is sampled' : '') + '. Input supplied does not imply every observation was used internally.';
     var host = el('div', null, panel, 'epi-forecast-chart');
     host.setAttribute('role', 'region'); host.setAttribute('aria-label', title + ': ' + series.label);
@@ -338,6 +368,18 @@
         }
         el('h4', 'Input supplied · ' + input.filename, content);
         tablePreview(content, input.table);
+        if (input.observation_note) el('p', input.observation_note, content, 'epi-forecast-note');
+        if (input.reference) {
+          el('h4', input.reference.kind === 'source' ? 'Observed values · pinned source' : 'Observed values · benchmark reference', content);
+          var referenceLink = el('a', 'Reference data at the recorded version ↗', content, 'epi-forecast-source');
+          referenceLink.href = input.reference.url; referenceLink.target = '_blank'; referenceLink.rel = 'noopener';
+          tablePreview(content, input.reference.table);
+          if (input.reference.kind === 'source' && input.reference.sql) {
+            var observedSql = el('details', null, content);
+            el('summary', 'Observation preview SQL', observedSql);
+            el('pre', input.reference.sql, observedSql);
+          }
+        }
         if (input.sql && input.sql.trim()) {
           var sql = el('details', null, content);
           el('summary', 'Recorded workflow SQL', sql); el('pre', input.sql, sql);

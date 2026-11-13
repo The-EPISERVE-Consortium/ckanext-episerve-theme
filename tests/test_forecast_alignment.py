@@ -36,6 +36,21 @@ let future = combine(series('day', [{x:'2026-01-01',value:1},{x:'2026-01-02',val
                      series('day', [{x:'2026-01-03',value:3,q10:2,q90:4},{x:'2026-01-04',value:4,q10:3,q90:5}]));
 assert.equal(transition(future.points).from, 1);
 assert.equal(transition(future.points).to, 2);
+const truth = series('day', [{x:'2026-01-02',value:99},{x:'2026-01-03',value:7},{x:'2026-01-04',value:null},{x:'2026-01-05',value:10}]);
+let observed = combine(series('day', [{x:'2026-01-01',value:1},{x:'2026-01-02',value:2}]),
+                       series('day', [{x:'2026-01-03',value:3},{x:'2026-01-04',value:4}]), truth);
+assert.equal(observed.points.length, 4); // Do not extend the prediction range with truth.
+assert.equal(observed.observed_rows, 2);
+assert.equal(observed.points[1].observed, undefined); // Truth is never supplied input.
+assert.equal(observed.points[2].observed, 7);
+assert.equal(observed.points[2].history, undefined);
+assert.equal(observed.points[3].observed, null);
+assert.equal(options(observed).series[4].name, 'Observed values');
+assert.equal(options(observed).series[4].data[0].y, 7);
+assert.equal(options(observed).series[4].data[1].y, null);
+assert.equal(options(observed).series[1].data.length, 2);
+assert.equal(options(observed).series[3].data.length, 2);
+assert.equal(combine(input, output, Object.assign({}, truth, {duplicate_x:true})).observed_rows, 0);
 let configuration = options(future);
 assert.equal(configuration.chart.type, 'rangeArea');
 assert.equal(configuration.chart.id, undefined); // Avoid v3 named-chart registry cycles on updates.
