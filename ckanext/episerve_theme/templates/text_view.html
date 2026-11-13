@@ -1,0 +1,12 @@
+{% ckan_extends %}
+
+{# Keep CKAN's escaped plain-text renderer. Markdown preview URLs use the same
+   recorded version and signed access as the resource page's download link. #}
+{% block scripts %}
+  {{ super() }}
+  {% if resource.format | lower in ('md', 'markdown') %}
+    <script>
+      resource_url = {{ h.episerve_file_url(resource, package) | tojson }};
+    </script>
+  {% endif %}
+{% endblock %}
