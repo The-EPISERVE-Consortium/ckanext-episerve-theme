@@ -1,11 +1,12 @@
 {% ckan_extends %}
 
-{# Keep CKAN's escaped plain-text renderer. Markdown preview URLs use the same
+{# Keep CKAN's escaped plain-text renderer. Raw-text preview URLs use the same
    recorded version and signed access as the resource page's download link. #}
 {% block scripts %}
   {{ super() }}
-  {% if resource.format | lower in ('md', 'markdown') %}
+  {% if resource.format | lower in ('md', 'markdown', 'txt', 'xml', 'conf', 'yaml', 'yml') %}
     <script>
+      preview_metadata = {text_formats: [], json_formats: [], jsonp_formats: [], xml_formats: []};
       resource_url = {{ h.episerve_file_url(resource, package) | tojson }};
     </script>
   {% endif %}

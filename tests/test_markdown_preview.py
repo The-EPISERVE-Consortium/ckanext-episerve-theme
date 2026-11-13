@@ -29,7 +29,7 @@ def render(format, url):
         h=SimpleNamespace(episerve_file_url=lambda resource, package: url))
 
 
-@pytest.mark.parametrize('format', ['MD', 'md', 'MARKDOWN'])
+@pytest.mark.parametrize('format', ['MD', 'md', 'MARKDOWN', 'TXT', 'XML', 'CONF', 'YAML', 'YML'])
 def test_markdown_preview_preserves_signed_pinned_file_url(format):
     """Use the resource helper rather than losing the recorded version or access.
 
@@ -41,6 +41,7 @@ def test_markdown_preview_preserves_signed_pinned_file_url(format):
     value = html.rsplit('resource_url = ', 1)[1].split(';', 1)[0]
     assert json.loads(value) == url
     assert 'var resource_url="original";' in html
+    assert 'xml_formats: []' in html and 'json_formats: []' in html
 
 
 def test_other_text_views_keep_their_existing_behavior_and_urls_are_escaped():
