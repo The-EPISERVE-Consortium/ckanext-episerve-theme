@@ -117,12 +117,13 @@
     var inputLabel = el('label', 'Input supplied series', controls, 'epi-forecast-series');
     var inputSelect = el('select', null, inputLabel);
     inputSelect.setAttribute('aria-label', 'Input supplied series');
-    var host = el('div', null, parent), selectedInputs = [];
+    var host = el('div', null, parent), selectedInputs = [], instance = null;
 
     /** Replace the graph after a series choice while releasing library handlers. */
     async function render() {
       forecasts.disabled = true; inputSelect.disabled = true;
-      destroyCharts();
+      destroyChart(instance);
+      instance = null;
       host.replaceChildren();
       var input = selectedInputs[Number(inputSelect.value)];
       var forecast = result.predictions[Number(forecasts.value)];
@@ -133,7 +134,8 @@
       }) : [];
       var merged = input || forecast ? [combine(input && input.series, forecast, references.length === 1 ? references[0] : null)] : [];
       try {
-        await chart(host, 'Input supplied & recorded predictions', merged);
+        instance = await chart(host, 'Input supplied & recorded predictions', merged);
+        return Boolean(instance);
       } finally {
         forecasts.disabled = !result.predictions.length; inputSelect.disabled = !selectedInputs.length;
       }
@@ -155,7 +157,7 @@
         });
         if (matching >= 0) inputSelect.value = matching;
       }
-      await render();
+      return render();
     }
     /** Keep chart update failures visible and retryable without uncaught promises. */
     function updateError(error) {
@@ -188,6 +190,17 @@
       script.remove(); state.apexPromise = null; throw error;
     });
     return state.apexPromise;
+  }
+
+  /** Release one chart without disturbing other previews on the page.
+   *
+   * Args:
+   *   instance: Chart to destroy, or null when nothing has rendered.
+   */
+  function destroyChart(instance) {
+    if (!instance) return;
+    instance.destroy();
+    state.charts = state.charts.filter(function (candidate) { return candidate !== instance; });
   }
 
   /** Release library event handlers and resize observers before replacing a chart. */
@@ -318,6 +331,165 @@
       try { instance.destroy(); } catch (cleanupError) { /* Rendering never completed. */ }
       throw new Error('The interactive chart could not be rendered. Please retry.');
     }
+    return instance;
+  }
+
+  /** Prepare explicit column pairs without deduplicating or aggregating rows.
+   *
+   * Args:
+   *   file: Preview descriptor containing aligned sampled rows and column metadata.
+   *   xIndex: Selected X column index.
+   *   yIndex: Selected numeric Y column index.
+   *
+   * Returns:
+   *   Chart options and display counts, or null if no usable pairs exist.
+   */
+  function manualOptions(file, xIndex, yIndex) {
+    var data = file.data, xColumn = data.columns[xIndex], yColumn = data.columns[yIndex];
+    if (!xColumn || !yColumn || !yColumn.numeric) return null;
+    var rows = data.rows.map(function (cells, index) { return {cells:cells, row:data.row_numbers[index]}; }).filter(function (row) {
+      return row.cells[xIndex] !== null && row.cells[xIndex] !== '';
+    });
+    var dates = rows.length > 0 && rows.every(function (row) { return calendar(row.cells[xIndex]) !== null; });
+    var numeric = rows.every(function (row) { return String(row.cells[xIndex]).trim() !== '' && Number.isFinite(Number(row.cells[xIndex])); });
+    var categories = new Map(), seen = new Set(), repeated = Boolean(xColumn.duplicate);
+    var points = rows.map(function (row) {
+      var label = String(row.cells[xIndex]);
+      if (!categories.has(label)) categories.set(label, categories.size);
+      var coordinate = dates ? calendar(label) : (numeric ? Number(label) : categories.get(label));
+      if (seen.has(coordinate)) repeated = true;
+      seen.add(coordinate);
+      var point = {x:label, axis_value:coordinate, row:row.row, cells:row.cells};
+      point[file.prediction ? 'value' : 'history'] = Number.isFinite(row.cells[yIndex]) ? row.cells[yIndex] : null;
+      return point;
+    }).sort(function (a, b) { return a.axis_value - b.axis_value; });
+    if (!points.length || !points.some(function (point) { return Number.isFinite(point.cells[yIndex]); })) return null;
+    var series = {points:points, date_axis:dates, column:yColumn.name, label:yColumn.name,
+                  initial_zoom:100, initial_position:0};
+    var options = chartOptions(series);
+    options.chart.type = repeated ? 'scatter' : 'line';
+    options.series = [{name:yColumn.name, type:options.chart.type, data:points.map(function (point) {
+      return {x:point.axis_value, y:point[file.prediction ? 'value' : 'history']};
+    })}];
+    options.colors = [file.prediction ? '#c62828' : '#111827'];
+    options.stroke = {curve:'straight', width:repeated ? 0 : 2, dashArray:0};
+    options.fill = {opacity:1};
+    options.markers = {size:repeated ? 3 : 2, strokeWidth:0, hover:{sizeOffset:2}};
+    options.annotations = {};
+    options.xaxis.title = {text:xColumn.name};
+    if (!dates && !numeric) {
+      var categoryLabels = Array.from(categories.keys());
+      options.xaxis.tickAmount = Math.min(5, Math.max(1, categoryLabels.length - 1));
+      options.xaxis.decimalsInFloat = 0;
+      options.xaxis.labels.formatter = function (value) { return categoryLabels[Math.round(Number(value))] || ''; };
+    }
+    options.yaxis.title = {text:yColumn.name};
+    var min = points[0].axis_value, max = points[points.length - 1].axis_value;
+    if (min === max) {
+      min -= dates ? 86400000 : 1; max += dates ? 86400000 : 1;
+      if (dates) options.xaxis.tickAmount = 2;
+    }
+    options.xaxis.min = min; options.xaxis.max = max;
+    options.chart.toolbar.tools.customIcons[0].click = function (chart) {
+      return chart.updateOptions({xaxis:{min:min, max:max}}, false, false);
+    };
+    options.tooltip = {shared:false, intersect:false, custom:function (context) {
+      var point = points[context.dataPointIndex];
+      if (!point) return '';
+      var box = el('div', null, null, 'epi-forecast-apex-tooltip');
+      el('strong', xColumn.name + ': ' + point.x, box);
+      el('div', yColumn.name + ': ' + (point.cells[yIndex] === null ? 'missing' : point.cells[yIndex]), box);
+      el('div', 'Recorded row: ' + point.row, box);
+      data.columns.forEach(function (column, index) {
+        if (index !== xIndex && index !== yIndex && index < 7) el('div', column.name + ': ' + (point.cells[index] === null ? 'missing' : point.cells[index]), box);
+      });
+      return box.outerHTML;
+    }};
+    return {options:options, repeated:repeated, count:points.length};
+  }
+
+  /** Offer a file and X/Y columns when automatic chart mapping is unavailable.
+   *
+   * Args:
+   *   parent: Container receiving the fallback controls and chart.
+   *   result: Versioned preview including bounded column samples.
+   */
+  function manualFallback(parent, result) {
+    var files = [];
+    if (result.prediction_manual) files.push({label:'Recorded predictions', data:result.prediction_manual, prediction:true});
+    result.inputs.forEach(function (input) {
+      if (input.manual) files.push({label:'Input supplied · ' + input.filename, data:input.manual, prediction:false});
+    });
+    if (!files.length) return;
+    var panel = el('section', null, parent, 'epi-forecast-panel epi-forecast-manual');
+    el('h3', 'Choose chart axes', panel);
+    el('p', 'Automatic mapping is unavailable for some recorded data. Choose a file and the columns to plot.', panel, 'epi-forecast-note');
+    var controls = el('div', null, panel, 'epi-forecast-controls');
+
+    /** Create one labelled column selector.
+     *
+     * Args:
+     *   name: Accessible selector name.
+     *
+     * Returns:
+     *   Empty select element.
+     */
+    function selector(name) {
+      var label = el('label', name, controls, 'epi-forecast-series');
+      var select = el('select', null, label);
+      select.setAttribute('aria-label', name);
+      return select;
+    }
+    var fileSelect = selector('Chart file'), xSelect = selector('X axis'), ySelect = selector('Y axis');
+    files.forEach(function (file, index) { el('option', file.label, fileSelect).value = index; });
+    var note = el('p', 'Select X and Y columns to draw the chart.', panel, 'epi-forecast-note');
+    note.setAttribute('role', 'status');
+    var host = el('div', null, panel), instance = null;
+
+    /** Reset column choices when the user changes the recorded file. */
+    function chooseFile() {
+      destroyChart(instance); instance = null; host.replaceChildren();
+      xSelect.replaceChildren(); ySelect.replaceChildren();
+      el('option', 'Choose a column', xSelect).value = '';
+      el('option', 'Choose a numeric column', ySelect).value = '';
+      var file = files[Number(fileSelect.value)];
+      file.data.columns.forEach(function (column, index) {
+        el('option', column.name, xSelect).value = index;
+        if (column.numeric) el('option', column.name, ySelect).value = index;
+      });
+      ySelect.disabled = ySelect.options.length === 1;
+      note.textContent = ySelect.disabled ? 'This file has no numeric columns for the Y axis.' : 'Select X and Y columns to draw the chart.';
+    }
+
+    /** Render only the chosen columns while preserving duplicate coordinates. */
+    async function renderManual() {
+      destroyChart(instance); instance = null; host.replaceChildren();
+      if (xSelect.value === '' || ySelect.value === '') { note.textContent = 'Select X and Y columns to draw the chart.'; return; }
+      var file = files[Number(fileSelect.value)], prepared = manualOptions(file, Number(xSelect.value), Number(ySelect.value));
+      if (!prepared) { note.textContent = 'No numeric values with a usable X coordinate are available for these columns.'; return; }
+      note.textContent = prepared.count + ' plotted rows of ' + file.data.total + ' recorded rows' +
+        (file.data.sampled ? ' · evenly spaced display sample across the full file' : '') +
+        (file.data.truncated ? ' · long text labels are shortened' : '') +
+        (prepared.repeated ? '. Repeated X values are shown as separate points; rows are not grouped or aggregated.' : '.');
+      fileSelect.disabled = true; xSelect.disabled = true; ySelect.disabled = true;
+      var chartHost = el('div', null, host, 'epi-forecast-chart');
+      chartHost.setAttribute('role', 'region'); chartHost.setAttribute('aria-label', 'Selected columns chart');
+      instance = new window.ApexCharts(chartHost, prepared.options);
+      state.charts.push(instance);
+      try { await instance.render(); }
+      catch (error) { destroyChart(instance); instance = null; note.textContent = 'The selected columns could not be plotted. Change the selection to retry.'; }
+      finally { fileSelect.disabled = false; xSelect.disabled = false; ySelect.disabled = false; }
+    }
+    fileSelect.addEventListener('change', chooseFile);
+    xSelect.addEventListener('change', function () { renderManual().catch(function () { note.textContent = 'The chart could not be updated. Change the selection to retry.'; }); });
+    ySelect.addEventListener('change', function () { renderManual().catch(function () { note.textContent = 'The chart could not be updated. Change the selection to retry.'; }); });
+    if (result.predictions.length) {
+      var unavailable = files.findIndex(function (file) {
+        return !file.prediction && result.inputs.some(function (input) { return input.manual === file.data && (!input.series.length || input.series.some(function (series) { return series.duplicate_x; })); });
+      });
+      if (unavailable >= 0) fileSelect.value = unavailable;
+    }
+    chooseFile();
   }
 
   /** Fetch preview JSON only when the model-run tab is opened, allowing retries. */
@@ -338,6 +510,8 @@
       content.replaceChildren();
       status.textContent = 'Run artifact version ' + result.artifact_commit.slice(0, 12) + ' · ' + (result.cached ? 'Saved preview' : 'Preview prepared');
       result.warnings.forEach(function (message) {
+        if ((result.prediction_manual || result.inputs.some(function (input) { return input.manual; })) &&
+            message.indexOf('readable, but automatic chart mapping is unavailable.') >= 0) return;
         el('p', message.replace('The recorded output is shown as a table.', 'Inspect the recorded output in Resources.'), content, 'epi-forecast-note');
       });
       result.inputs.forEach(function (input) {
@@ -346,7 +520,11 @@
       var chartError = null;
       try {
         await loadApexCharts();
-        await combinedChart(content, result);
+        var hasAutomatic = result.predictions.length || result.inputs.some(function (input) { return input.series.length; });
+        var automatic = hasAutomatic ? await combinedChart(content, result) : false;
+        if (!automatic || !result.predictions.length || result.inputs.some(function (input) {
+          return input.manual && (!input.series.length || input.series.some(function (series) { return series.duplicate_x; }));
+        })) manualFallback(content, result);
       } catch (error) {
         chartError = error;
         el('p', error.message + ' Recorded files remain available in Resources.', content, 'epi-forecast-note');

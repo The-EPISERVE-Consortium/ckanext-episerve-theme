@@ -28,3 +28,13 @@ release its listeners and resize observers.
 When changing the library version, update both the pinned URL and integrity hash
 in `forecast_preview.js`. Verify the chosen release's license rather than assuming
 newer ApexCharts releases use the same terms. The homepage renderer is unchanged.
+
+
+When automatic mapping is unavailable, a fallback lets the visitor select a
+recorded file, an X column and a numeric Y column. It uses an aligned, bounded
+sample spanning the full pinned file; the displayed count states when sampling
+applies. Column selection reads only the existing preview JSON. Repeated X values
+are shown as separate points, preserving rows without aggregation; tooltips show
+the original row number and contextual columns. Unique X values use solid lines.
+The fallback does not infer historical/forecast alignment or overlay reference
+values. Automatic charts remain unchanged for files they can already map.
