@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from ckanext.episerve_theme import model_card as mc
 
 PARAMETERS = {
@@ -118,3 +120,9 @@ def test_card_extras_are_the_sync_flows():
         "model_task", "model_parameters", "model_inputs", "model_outputs", "model_resources",
         "model_documentation", "model_card_valid", "model_card_validation",
     }
+
+
+def test_sections_match_episerve_specs():
+    # A section added to the model-card spec must also be listed (and shown) by the theme.
+    specs = pytest.importorskip("episerve_specs")
+    assert set(mc.SECTIONS) == set(specs.MODEL_CARD_SECTIONS)
